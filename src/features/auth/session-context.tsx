@@ -6,7 +6,7 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
-import { ApiError, api } from "./api";
+import { ApiError, api } from "@/shared/api/amule-api";
 
 type Session = {
   ready: boolean;

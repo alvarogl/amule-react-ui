@@ -1,17 +1,16 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSession } from "./session";
-import { uiConfig } from "./config";
+import { useSession } from "@/features/auth/session-context";
+import { uiConfig } from "@/shared/config/ui-config";
+import { queryKeys } from "@/shared/api/query-keys";
 
 const snapshots = [
-  ["status"],
-  ["downloads"],
-  ["servers"],
-  ["clients"],
-  ["shared"],
-  ["categories"],
-  ["logs"],
-  ["searches"],
+  queryKeys.status,
+  queryKeys.downloads,
+  queryKeys.servers,
+  queryKeys.uploadClients,
+  queryKeys.categories,
+  queryKeys.searches,
 ];
 export function useLiveUpdates() {
   const queryClient = useQueryClient();

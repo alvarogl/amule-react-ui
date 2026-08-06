@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { uiConfig } from "./config";
+import { uiConfig } from "@/shared/config/ui-config";
 
 const errorSchema = z.object({
   error: z.object({ code: z.string(), message: z.string() }),

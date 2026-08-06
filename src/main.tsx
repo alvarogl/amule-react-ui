@@ -1,29 +1,21 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { App } from "./ui/App";
-import { SessionProvider } from "./session";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
-import "./styles.css";
-import "./transfers.css";
-import "./search.css";
-import "./servers.css";
-import "./categories.css";
-import "./details.css";
-import "./navigation.css";
-import "./data-table.css";
-import "./layout.css";
-import "./confirm-dialog.css";
-import "./status.css";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: (count, error) => !(error instanceof Error && error.name === "ApiError") && count < 2,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import { App } from "@/app/App";
+import { queryClient } from "@/app/query-client";
+import { SessionProvider } from "@/features/auth/session-context";
+import "@/app/styles.css";
+import "@/app/layout.css";
+import "@/app/navigation.css";
+import "@/app/status.css";
+import "@/features/transfers/transfers.css";
+import "@/features/transfers/details.css";
+import "@/features/search/search.css";
+import "@/features/servers/servers.css";
+import "@/features/categories/categories.css";
+import "@/shared/styles/data-table.css";
+import "@/shared/styles/confirm-dialog.css";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

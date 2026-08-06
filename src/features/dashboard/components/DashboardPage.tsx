@@ -15,61 +15,21 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, type Download } from "../api";
-import { useSession } from "../session";
-import { useLiveUpdates } from "../sse";
-import { SearchView } from "./Search";
-import { ServersView } from "./Servers";
-import { CategoriesView } from "./Categories";
-import { TransferDetails } from "./TransferDetails";
-import { SortableHeader, type SortDirection } from "./DataTable";
-import { ConfirmDialog } from "./ConfirmDialog";
+import { api, type Download } from "@/shared/api/amule-api";
+import { queryKeys } from "@/shared/api/query-keys";
+import { useSession } from "@/features/auth/session-context";
+import { useLiveUpdates } from "@/shared/realtime/use-live-updates";
+import { SearchView } from "@/features/search/components/SearchView";
+import { ServersView } from "@/features/servers/components/ServersView";
+import { CategoriesView } from "@/features/categories/components/CategoriesView";
+import { TransferDetails } from "@/features/transfers/components/TransferDetails";
+import { SortableHeader } from "@/shared/components/SortableHeader";
+import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
+import { formatMebibytes, formatRate } from "@/shared/lib/formatters";
+import { useSortState } from "@/shared/hooks/use-sort-state";
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
 
-const rate = (value = 0) => {
-  const units = ["B/s", "KiB/s", "MiB/s", "GiB/s"];
-  let amount = Math.max(0, value);
-  let unit = 0;
-  while (amount >= 1024 && unit < units.length - 1) {
-    amount /= 1024;
-    unit += 1;
-  }
-  const precision = unit === 0 || amount >= 100 ? 0 : amount >= 10 ? 1 : 2;
-  return `${amount.toFixed(precision)} ${units[unit]}`;
-};
-const size = (value?: number) =>
-  value === undefined ? "—" : `${(value / 1024 / 1024).toFixed(value >= 1024 * 1024 ? 1 : 0)} MiB`;
-function Login() {
-  const { login } = useSession();
-  const [password, setPassword] = useState("");
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    try {
-      await login(password);
-    } catch (x) {
-      toast.error(x instanceof Error ? x.message : "Login failed");
-    }
-  }
-  return (
-    <main className="login">
-      <form onSubmit={submit}>
-        <Activity size={36} />
-        <h1>aMule Console</h1>
-        <label>
-          Admin password
-          <input
-            autoFocus
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
-        <button>Sign in</button>
-      </form>
-    </main>
-  );
-}
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <section className="metric">
@@ -81,17 +41,16 @@ function Metric({ label, value }: { label: string; value: string }) {
 function Transfers({ downloads }: { downloads: Download[] }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
-  const [sort, setSort] = useState<"name" | "status" | "speed" | "priority" | "category" | "size">(
-    "name",
-  );
-  const [direction, setDirection] = useState<SortDirection>("asc");
+  const { sort, direction, toggleSort } = useSortState<
+    "name" | "status" | "speed" | "priority" | "category" | "size"
+  >("name");
   const [link, setLink] = useState("");
   const client = useQueryClient();
   const categories = useQuery({
-    queryKey: ["categories"],
+    queryKey: queryKeys.categories,
     queryFn: api.categories,
   });
-  const refresh = () => void client.invalidateQueries({ queryKey: ["downloads"] });
+  const refresh = () => void client.invalidateQueries({ queryKey: queryKeys.downloads });
   const one = useMutation({
     mutationFn: ({ hash, status }: { hash: string; status: "pause" | "resume" }) =>
       api.downloadAction(hash, status),
@@ -190,13 +149,6 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       comparison = String(left[sort]).localeCompare(String(right[sort]));
     return direction === "asc" ? comparison : -comparison;
   });
-  const toggleSort = (column: typeof sort) => {
-    if (column === sort) setDirection((current) => (current === "asc" ? "desc" : "asc"));
-    else {
-      setSort(column);
-      setDirection("asc");
-    }
-  };
   const toggle = (hash: string) =>
     setSelected((s) => (s.includes(hash) ? s.filter((v) => v !== hash) : [...s, hash]));
   function submit(e: FormEvent) {
@@ -378,7 +330,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
                   </select>
                 </td>
                 <td>
-                  {size(d.size)} / {size(d.size_done)} (
+                  {formatMebibytes(d.size)} / {formatMebibytes(d.size_done)} (
                   {d.progress?.percent !== undefined
                     ? `${d.progress.percent.toFixed(1)}%`
                     : d.size
@@ -386,7 +338,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
                       : "—"}
                   )
                 </td>
-                <td>{rate(d.speed_bps)}</td>
+                <td>{formatRate(d.speed_bps)}</td>
                 <td>
                   {d.status === "completed" ? (
                     <button
@@ -441,10 +393,11 @@ function Transfers({ downloads }: { downloads: Download[] }) {
   );
 }
 function Uploads() {
-  const [sort, setSort] = useState<"peer" | "file" | "client" | "speed">("peer");
-  const [direction, setDirection] = useState<SortDirection>("asc");
+  const { sort, direction, toggleSort } = useSortState<"peer" | "file" | "client" | "speed">(
+    "peer",
+  );
   const uploads = useQuery({
-    queryKey: ["clients", "uploads"],
+    queryKey: queryKeys.uploadClients,
     queryFn: api.uploadClients,
     refetchInterval: 10_000,
   });
@@ -465,13 +418,6 @@ function Uploads() {
         : String(leftValue).localeCompare(String(rightValue));
     return direction === "asc" ? comparison : -comparison;
   });
-  const toggleSort = (column: typeof sort) => {
-    if (column === sort) setDirection((current) => (current === "asc" ? "desc" : "asc"));
-    else {
-      setSort(column);
-      setDirection("asc");
-    }
-  };
   return (
     <section className="panel upload-panel">
       <div className="panel-title">
@@ -531,7 +477,7 @@ function Uploads() {
                   <td>
                     {peer.software} {peer.software_version}
                   </td>
-                  <td>{rate(peer.upload_speed_bps)}</td>
+                  <td>{formatRate(peer.upload_speed_bps)}</td>
                 </tr>
               ))}
             </tbody>
@@ -543,12 +489,12 @@ function Uploads() {
     </section>
   );
 }
-function Console() {
+export function DashboardPage() {
   const { logout } = useSession();
   const [view, setView] = useState<"dashboard" | "search" | "servers" | "categories">("dashboard");
-  const status = useQuery({ queryKey: ["status"], queryFn: api.status });
+  const status = useQuery({ queryKey: queryKeys.status, queryFn: api.status });
   const downloads = useQuery({
-    queryKey: ["downloads"],
+    queryKey: queryKeys.downloads,
     queryFn: api.downloads,
   });
   useLiveUpdates();
@@ -578,8 +524,8 @@ function Console() {
           {s.ec_connected ? "daemon connected" : "daemon unavailable"}
         </p>
         <div className="metrics">
-          <Metric label="Download" value={rate(s.speeds.download_bps)} />
-          <Metric label="Upload" value={rate(s.speeds.upload_bps)} />
+          <Metric label="Download" value={formatRate(s.speeds.download_bps)} />
+          <Metric label="Upload" value={formatRate(s.speeds.upload_bps)} />
           <Metric label="Sources" value={String(s.queue.total_source_count)} />
           <Metric label="Upload queue" value={String(s.queue.upload_queue_length)} />
         </div>
@@ -622,15 +568,5 @@ function Console() {
       </nav>
       {body}
     </main>
-  );
-}
-export function App() {
-  const { ready, authenticated } = useSession();
-  return !ready ? (
-    <main className="loading">Checking session…</main>
-  ) : authenticated ? (
-    <Console />
-  ) : (
-    <Login />
   );
 }
