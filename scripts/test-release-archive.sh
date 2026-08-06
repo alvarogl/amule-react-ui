@@ -27,6 +27,7 @@ tar -tzf "${first_output}/${archive}" >"${fixture}/contents.txt"
 rg -qx "amule-react-ui-v${version}/dist/index.html" "${fixture}/contents.txt"
 rg -qx "amule-react-ui-v${version}/scripts/install-static-ui.sh" "${fixture}/contents.txt"
 rg -qx "amule-react-ui-v${version}/docs/amuleapi.conf.example" "${fixture}/contents.txt"
+rg -qx "amule-react-ui-v${version}/LICENSE" "${fixture}/contents.txt"
 rg -qx "amule-react-ui-v${version}/RELEASE-MANIFEST.json" "${fixture}/contents.txt"
 ! rg -n '(^|/)\.env($|\.)|node_modules|amuleapi-passwords' "${fixture}/contents.txt"
 

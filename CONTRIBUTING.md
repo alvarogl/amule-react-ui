@@ -32,6 +32,11 @@ pnpm build
 
 Use a focused branch and open a pull request targeting `main`. Fill in the pull-request template, keep commits coherent, and include a screenshot or short recording for material interface changes. The required CI check validates formatting, tests, and the production build.
 
+## License
+
+By contributing, you agree that your contributions are licensed under the
+[MIT License](LICENSE).
+
 ## aMule compatibility
 
 Check the local `docs/api/REFERENCE.md` before extending an API workflow. If behavior belongs in the daemon, web server, or API server rather than the SPA, report or discuss it with the [upstream aMule project](https://github.com/amule-org/amule).

@@ -114,8 +114,10 @@ The output in `release/` contains the static bundle, deployment helper,
 generic templates, documentation, and a release manifest. It deliberately
 excludes `.env`, credentials, runtime configuration, and dependencies. Verify
 the downloaded archive with `sha256sum --check release/*.sha256` before use.
-The project has no declared distribution license yet, so do not publish an
-archive publicly until a license is selected.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 ## Quality checks
 

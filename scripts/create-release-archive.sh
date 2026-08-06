@@ -22,7 +22,7 @@ Options:
   -h, --help               Show this help.
 
 The archive contains dist/, the installer, generic configuration templates,
-deployment documentation, README.md, and RELEASE-MANIFEST.json. It never
+deployment documentation, README.md, LICENSE, and RELEASE-MANIFEST.json. It never
 includes .env files, credentials, runtime configuration, or node_modules.
 EOF
 }
@@ -90,6 +90,7 @@ archive_stage="${stage_dir}/${release_root}"
 mkdir -p -- "${archive_stage}/docs" "${archive_stage}/scripts"
 cp -a -- "${PROJECT_ROOT}/dist" "${archive_stage}/dist"
 cp -- "${PROJECT_ROOT}/README.md" "${archive_stage}/README.md"
+cp -- "${PROJECT_ROOT}/LICENSE" "${archive_stage}/LICENSE"
 cp -- "${PROJECT_ROOT}/docs/DEPLOYMENT.md" "${archive_stage}/docs/DEPLOYMENT.md"
 cp -- "${PROJECT_ROOT}/docs/amule.conf.example" "${archive_stage}/docs/amule.conf.example"
 cp -- "${PROJECT_ROOT}/docs/amuleapi.conf.example" "${archive_stage}/docs/amuleapi.conf.example"
