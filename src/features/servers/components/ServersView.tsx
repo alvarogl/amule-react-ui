@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Pin, Trash2, Unplug } from "lucide-react";
-import { api } from "../api";
+import { api } from "@/shared/api/amule-api";
 import { toast } from "sonner";
-import { SortableHeader, type SortDirection } from "./DataTable";
-import { ConfirmDialog } from "./ConfirmDialog";
+import { SortableHeader } from "@/shared/components/SortableHeader";
+import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
+import { queryKeys } from "@/shared/api/query-keys";
+import { useSortState } from "@/shared/hooks/use-sort-state";
 
 type ServerRow = Awaited<ReturnType<typeof api.servers>>["servers"][number];
 
@@ -12,15 +14,16 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
   const [address, setAddress] = useState("");
   const [name, setName] = useState("");
   const [serversUrl, setServersUrl] = useState("");
-  const [sort, setSort] = useState<"name" | "address" | "users" | "priority">("name");
-  const [direction, setDirection] = useState<SortDirection>("asc");
+  const { sort, direction, toggleSort } = useSortState<"name" | "address" | "users" | "priority">(
+    "name",
+  );
   const client = useQueryClient();
   const servers = useQuery({
-    queryKey: ["servers"],
+    queryKey: queryKeys.servers,
     queryFn: api.servers,
     refetchInterval: 20_000,
   });
-  const refresh = () => void client.invalidateQueries({ queryKey: ["servers"] });
+  const refresh = () => void client.invalidateQueries({ queryKey: queryKeys.servers });
   const add = useMutation({
     mutationFn: () => api.addServer(address, name),
     onSuccess: () => {
@@ -54,7 +57,7 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
       toast.success(
         `${variables.target === "both" ? "All networks" : variables.target === "kad" ? "Kad" : "eD2k"} ${variables.action === "connect" ? "connect requested" : "disconnected"}.`,
       );
-      void client.invalidateQueries({ queryKey: ["status"] });
+      void client.invalidateQueries({ queryKey: queryKeys.status });
       refresh();
     },
     onError: (error) => toast.error(error.message),
@@ -112,13 +115,6 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
         : String(leftValue).localeCompare(String(rightValue));
     return direction === "asc" ? comparison : -comparison;
   });
-  const toggleSort = (column: typeof sort) => {
-    if (column === sort) setDirection((current) => (current === "asc" ? "desc" : "asc"));
-    else {
-      setSort(column);
-      setDirection("asc");
-    }
-  };
   return (
     <div className="content">
       <h1>Servers & network</h1>

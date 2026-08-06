@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Search as SearchIcon, X } from "lucide-react";
-import { api, type SearchFilters } from "../api";
+import { api, type SearchFilters } from "@/shared/api/amule-api";
 import { toast } from "sonner";
-import { SortableHeader, type SortDirection } from "./DataTable";
+import { SortableHeader } from "@/shared/components/SortableHeader";
+import { queryKeys } from "@/shared/api/query-keys";
+import { useSortState } from "@/shared/hooks/use-sort-state";
 
 const fileTypes = [
   "any",
@@ -26,18 +28,17 @@ export function SearchView() {
   const [minAvail, setMinAvail] = useState("");
   const [chosenNames, setChosenNames] = useState<Record<string, string>>({});
   const [deletingSearches, setDeletingSearches] = useState<Set<number>>(new Set());
-  const [sort, setSort] = useState<"name" | "sources" | "size">("name");
-  const [direction, setDirection] = useState<SortDirection>("asc");
+  const { sort, direction, toggleSort } = useSortState<"name" | "sources" | "size">("name");
   const [active, setActive] = useState<number>();
   const input = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const searches = useQuery({
-    queryKey: ["searches"],
+    queryKey: queryKeys.searches,
     queryFn: api.searches,
     refetchInterval: 10_000,
   });
   const results = useQuery({
-    queryKey: ["search-results", active],
+    queryKey: queryKeys.searchResults(active),
     queryFn: () => api.searchResults(active!),
     enabled: active !== undefined,
     refetchInterval: 4_000,
@@ -46,7 +47,7 @@ export function SearchView() {
     mutationFn: () => api.startSearch(query, kind, filters()),
     onSuccess: (data) => {
       setActive(data.search_id);
-      void queryClient.invalidateQueries({ queryKey: ["searches"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.searches });
     },
     onError: (error) => toast.error(error.message),
   });
@@ -55,7 +56,7 @@ export function SearchView() {
       api.downloadSearchResult(hash, ecid),
     onSuccess: () => {
       toast.success("Search result added to transfers.");
-      void queryClient.invalidateQueries({ queryKey: ["downloads"] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.downloads });
     },
     onError: (error) => toast.error(error.message),
   });
@@ -67,9 +68,9 @@ export function SearchView() {
     onSuccess: async (_, searchId) => {
       setActive(undefined);
       setQuery("");
-      await queryClient.invalidateQueries({ queryKey: ["searches"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.searches });
       void queryClient.removeQueries({
-        queryKey: ["search-results", searchId],
+        queryKey: queryKeys.searchResults(searchId),
       });
       input.current?.focus();
     },
@@ -122,13 +123,6 @@ export function SearchView() {
           : left.size - right.size;
     return direction === "asc" ? comparison : -comparison;
   });
-  const toggleSort = (column: typeof sort) => {
-    if (column === sort) setDirection((current) => (current === "asc" ? "desc" : "asc"));
-    else {
-      setSort(column);
-      setDirection("asc");
-    }
-  };
   return (
     <div className="content">
       <h1>Search</h1>

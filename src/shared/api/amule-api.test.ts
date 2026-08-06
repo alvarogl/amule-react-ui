@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { downloadsSchema, statusSchema } from "./api";
+import { downloadsSchema, statusSchema } from "./amule-api";
 describe("aMule schemas", () => {
   it("accepts the status contract", () =>
     expect(

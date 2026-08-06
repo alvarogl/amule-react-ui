@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, Trash2 } from "lucide-react";
-import { api } from "../api";
+import { api } from "@/shared/api/amule-api";
 import { toast } from "sonner";
-import { ConfirmDialog } from "./ConfirmDialog";
+import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
+import { queryKeys } from "@/shared/api/query-keys";
 
 export function CategoriesView() {
   const [name, setName] = useState("");
@@ -11,10 +12,10 @@ export function CategoriesView() {
   const [drafts, setDrafts] = useState<Record<number, { name: string; path: string }>>({});
   const client = useQueryClient();
   const categories = useQuery({
-    queryKey: ["categories"],
+    queryKey: queryKeys.categories,
     queryFn: api.categories,
   });
-  const refresh = () => void client.invalidateQueries({ queryKey: ["categories"] });
+  const refresh = () => void client.invalidateQueries({ queryKey: queryKeys.categories });
   const customCategories =
     categories.data?.categories.filter((category) => category.index !== 0) ?? [];
   const add = useMutation({
