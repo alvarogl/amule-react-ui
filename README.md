@@ -40,6 +40,11 @@ sudo systemctl status amuled.service amuleweb.service
 
 Do not stop `amuled` when you only want to run the UI differently: it owns the core and its `amuleapi` child. To use the development UI, leave that stack running and start Vite separately.
 
+For a complete first install, upgrade, rollback, and secure-network guide, see
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Generic non-secret configuration
+templates are available at [docs/amule.conf.example](docs/amule.conf.example)
+and [docs/amuleapi.conf.example](docs/amuleapi.conf.example).
+
 ## Local development
 
 ```bash
@@ -71,7 +76,7 @@ pnpm build
 
 The production bundle is static; Vite's proxy only applies to `pnpm dev`. Rebuild after UI changes. If the configured static-root path changes, restart `amuled` so it starts `amuleapi` with the new configuration.
 
-For LAN access, follow the aMule project's network/security guidance and restrict the API listener and firewall rules to the intended network. Put TLS in front of `amuleapi` before exposing it beyond a trusted local network.
+For LAN access, restrict the API listener and firewall rules to the intended network. Put TLS in front of `amuleapi` before exposing it beyond a trusted local network; the deployment guide explains why the static UI and same-origin API must be secured together.
 
 ## Quality checks
 

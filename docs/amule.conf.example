@@ -1,0 +1,7 @@
+; Add this section while amuled is stopped. It starts amuleapi alongside the
+; daemon, so amuleapi receives a short-lived EC token instead of an EC password.
+[AmuleApi]
+Enabled=1
+BindAddress=127.0.0.1
+HttpPort=4713
+
