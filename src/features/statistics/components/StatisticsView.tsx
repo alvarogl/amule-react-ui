@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, ChevronRight } from "lucide-react";
+import { BarChart3, ChevronRight, Search } from "lucide-react";
 import { api, type StatisticNode, type StatisticValue } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
 import { QueryNotice } from "@/shared/components/QueryNotice";
@@ -55,10 +55,54 @@ function formatStatisticLabel(node: StatisticNode) {
   });
 }
 
+function statisticName(node: StatisticNode) {
+  if (node.raw) return node.raw;
+  return node.label.replace(/\s*:?\s*%s/g, "").replace(/\s+:$/, "");
+}
+
+function statisticValue(node: StatisticNode) {
+  if (!node.values.length) return "";
+  return node.values
+    .map((value) => {
+      const main = formatStatisticValue(value);
+      return value.extra ? `${main} (${formatStatisticValue(value.extra)})` : main;
+    })
+    .join(" · ");
+}
+
+function includesSearch(node: StatisticNode, search: string): boolean {
+  const term = search.toLocaleLowerCase();
+  return `${node.key ?? ""} ${node.raw ?? ""} ${formatStatisticLabel(node)}`
+    .toLocaleLowerCase()
+    .includes(term);
+}
+
+function filterNodes(nodes: StatisticNode[], search: string): StatisticNode[] {
+  if (!search.trim()) return nodes;
+  return nodes.flatMap((node) => {
+    const children = filterNodes(node.children, search);
+    return includesSearch(node, search) || children.length ? [{ ...node, children }] : [];
+  });
+}
+
+function findNode(nodes: StatisticNode[], keys: string[]): StatisticNode | undefined {
+  for (const node of nodes) {
+    if (node.key && keys.includes(node.key)) return node;
+    const match = findNode(node.children, keys);
+    if (match) return match;
+  }
+}
+
 function StatisticsTreeNode({ node, depth = 0 }: { node: StatisticNode; depth?: number }) {
-  const label = formatStatisticLabel(node);
+  const label = statisticName(node);
   const key = node.key ?? `${node.label}-${depth}`;
-  if (!node.children.length) return <div className="statistics-leaf">{label}</div>;
+  if (!node.children.length)
+    return (
+      <div className="statistics-leaf">
+        <span>{label}</span>
+        <strong>{statisticValue(node)}</strong>
+      </div>
+    );
 
   return (
     <Accordion.Item className="statistics-node" value={key}>
@@ -91,17 +135,29 @@ function StatisticsTreeNode({ node, depth = 0 }: { node: StatisticNode; depth?: 
   );
 }
 
-function StatisticsTree({ nodes }: { nodes: StatisticNode[] }) {
+function StatisticsTree({ nodes, search }: { nodes: StatisticNode[]; search: string }) {
+  const filtered = filterNodes(nodes, search);
   return (
     <Accordion.Root
       className="statistics-tree"
       type="multiple"
-      defaultValue={nodes.map((node, index) => node.key ?? `${node.label}-${index}`)}
+      defaultValue={
+        search ? filtered.map((node, index) => node.key ?? `${node.label}-${index}`) : []
+      }
     >
-      {nodes.map((node, index) => (
+      {filtered.map((node, index) => (
         <StatisticsTreeNode key={`${node.key ?? node.label}-${index}`} node={node} />
       ))}
     </Accordion.Root>
+  );
+}
+
+function SummaryCard({ title, node }: { title: string; node?: StatisticNode }) {
+  return (
+    <section className="statistics-summary-card">
+      <span>{title}</span>
+      <strong>{node ? statisticValue(node) || formatStatisticLabel(node) : "Unavailable"}</strong>
+    </section>
   );
 }
 
@@ -197,6 +253,7 @@ function ActivityChart({ data, graph }: { data: Array<Record<string, number>>; g
 export function StatisticsView() {
   const [graph, setGraph] = useState<GraphName>("traffic");
   const [width, setWidth] = useState(300);
+  const [statisticsSearch, setStatisticsSearch] = useState("");
   const tree = useQuery({
     queryKey: queryKeys.statisticsTree,
     queryFn: api.statisticsTree,
@@ -249,6 +306,14 @@ export function StatisticsView() {
     graph === "traffic"
       ? (download.data?.session ?? upload.data?.session)
       : secondary.data?.session;
+  const summary = tree.data?.nodes
+    ? {
+        uploaded: findNode(tree.data.nodes, ["upload_data", "upload_session"]),
+        downloaded: findNode(tree.data.nodes, ["download_data", "download_session"]),
+        ratio: findNode(tree.data.nodes, ["ul_dl_ratio"]),
+        connections: findNode(tree.data.nodes, ["active_connections"]),
+      }
+    : undefined;
   return (
     <div className="content statistics-view">
       <h1>Statistics</h1>
@@ -297,8 +362,8 @@ export function StatisticsView() {
       </section>
       <section className="panel statistics-panel">
         <div className="panel-title">
-          <h2>Detailed statistics</h2>
-          <span>Daemon statistics tree</span>
+          <h2>At a glance</h2>
+          <span>Current session</span>
         </div>
         {tree.isPending || tree.isError ? (
           <QueryNotice
@@ -307,10 +372,35 @@ export function StatisticsView() {
             onRetry={() => void tree.refetch()}
           />
         ) : tree.data?.nodes.length ? (
-          <StatisticsTree nodes={tree.data.nodes} />
+          <div className="statistics-summary">
+            <SummaryCard title="Downloaded" node={summary?.downloaded} />
+            <SummaryCard title="Uploaded" node={summary?.uploaded} />
+            <SummaryCard title="UL:DL ratio" node={summary?.ratio} />
+            <SummaryCard title="Active connections" node={summary?.connections} />
+          </div>
         ) : (
           <p className="empty">No statistics are available from the daemon.</p>
         )}
+      </section>
+      <section className="panel statistics-panel">
+        <div className="panel-title">
+          <div>
+            <h2>Detailed statistics</h2>
+            <span>Browse daemon diagnostics only when needed</span>
+          </div>
+          <label className="statistics-search">
+            <Search size={15} aria-hidden="true" />
+            <input
+              value={statisticsSearch}
+              onChange={(event) => setStatisticsSearch(event.target.value)}
+              placeholder="Filter details"
+              aria-label="Filter detailed statistics"
+            />
+          </label>
+        </div>
+        {tree.data?.nodes.length ? (
+          <StatisticsTree nodes={tree.data.nodes} search={statisticsSearch} />
+        ) : null}
       </section>
     </div>
   );
