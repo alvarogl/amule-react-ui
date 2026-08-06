@@ -1,18 +1,25 @@
-import { useState, type FormEvent } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
+  ChartNoAxesCombined,
   Check,
   FolderTree,
   LayoutDashboard,
   LogOut,
+  MoreHorizontal,
+  Network,
   Pause,
   Play,
+  RefreshCw,
   Search,
+  ScrollText,
   Server,
   Settings,
+  Share2,
   ShieldCheck,
   Trash2,
+  UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, type Download } from "@/shared/api/amule-api";
@@ -28,6 +35,17 @@ import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { formatMebibytes, formatRate } from "@/shared/lib/formatters";
 import { useSortState } from "@/shared/hooks/use-sort-state";
 import { getErrorMessage } from "@/shared/lib/errors";
+import { SharedFilesView } from "@/features/shared/components/SharedFilesView";
+import { KadView } from "@/features/kad/components/KadView";
+import { LogsView } from "@/features/logs/components/LogsView";
+import { PreferencesView } from "@/features/preferences/components/PreferencesView";
+import { PeersView } from "@/features/peers/components/PeersView";
+
+const StatisticsView = lazy(() =>
+  import("@/features/statistics/components/StatisticsView").then(({ StatisticsView }) => ({
+    default: StatisticsView,
+  })),
+);
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
 
@@ -36,6 +54,65 @@ function Metric({ label, value }: { label: string; value: string }) {
     <section className="metric">
       <span>{label}</span>
       <strong>{value}</strong>
+    </section>
+  );
+}
+function UpdateStatus() {
+  const client = useQueryClient();
+  const lastCheckedBeforeRequest = useRef<number | null>(null);
+  const [waitingForResult, setWaitingForResult] = useState(false);
+  const version = useQuery({
+    queryKey: queryKeys.version,
+    queryFn: api.version,
+    retry: false,
+    refetchInterval: waitingForResult ? 3_000 : false,
+  });
+  useEffect(() => {
+    const lastChecked = version.data?.update.last_checked;
+    if (
+      waitingForResult &&
+      lastChecked !== null &&
+      lastChecked !== undefined &&
+      lastChecked !== lastCheckedBeforeRequest.current
+    ) {
+      setWaitingForResult(false);
+      toast.success("Version check completed.");
+    }
+  }, [version.data?.update.last_checked, waitingForResult]);
+  const check = useMutation({
+    mutationFn: api.checkVersion,
+    onSuccess: () => {
+      lastCheckedBeforeRequest.current = version.data?.update.last_checked ?? null;
+      setWaitingForResult(true);
+      void client.invalidateQueries({ queryKey: queryKeys.version });
+    },
+    onError: (error) => {
+      setWaitingForResult(false);
+      toast.error(getErrorMessage(error));
+    },
+  });
+  if (!version.data?.update.check_enabled) return null;
+  const update = version.data.update;
+  const state = update.update_available
+    ? `Version ${update.latest_version} is available`
+    : update.checked
+      ? "aMule is up to date"
+      : "No version check has completed yet";
+  return (
+    <section
+      className={`update-status ${update.update_available ? "update-status--available" : ""}`}
+    >
+      <div>
+        <strong>{state}</strong>
+        <span>Running {version.data.daemon_version || version.data.amule_version}</span>
+      </div>
+      <button
+        className="muted"
+        disabled={check.isPending || waitingForResult}
+        onClick={() => check.mutate()}
+      >
+        <RefreshCw size={15} /> Check now
+      </button>
     </section>
   );
 }
@@ -159,6 +236,51 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       return toast.warning("Enter one or more valid ed2k:// links.");
     add.mutate(links);
   }
+  function transferActions(download: Download) {
+    if (download.status === "completed") {
+      return (
+        <button
+          className="icon"
+          disabled={clearOne.isPending}
+          aria-label={`Clear completed notification for ${download.name}`}
+          title="Clear completed notification (keeps Incoming file)"
+          onClick={() => clearOne.mutate(download.hash)}
+        >
+          <Check size={15} />
+        </button>
+      );
+    }
+    const nextAction = download.status === "paused" ? "resume" : "pause";
+    return (
+      <>
+        <button
+          className="icon"
+          aria-label={`${nextAction === "resume" ? "Resume" : "Pause"} ${download.name}`}
+          title={nextAction === "resume" ? "Resume download" : "Pause download"}
+          onClick={() => one.mutate({ hash: download.hash, status: nextAction })}
+        >
+          {nextAction === "resume" ? <Play size={15} /> : <Pause size={15} />}
+        </button>
+        <ConfirmDialog
+          trigger={
+            <button
+              className="icon danger"
+              disabled={remove.isPending}
+              aria-label={`Delete ${download.name}`}
+              title="Delete download"
+            >
+              <Trash2 size={15} />
+            </button>
+          }
+          title="Delete download?"
+          description={`“${download.name}” and its active download data will be permanently removed from disk.`}
+          actionLabel="Delete download"
+          dangerous
+          onConfirm={() => remove.mutate(download.hash)}
+        />
+      </>
+    );
+  }
   return (
     <section className="panel">
       <div className="panel-title">
@@ -226,7 +348,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
         />
       </div>
       <div className="table-wrap">
-        <table className="data-table">
+        <table className="data-table transfer-table">
           <colgroup>
             <col style={{ width: 46 }} />
             <col style={{ width: 330 }} />
@@ -235,7 +357,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
             <col style={{ width: 140 }} />
             <col style={{ width: 185 }} />
             <col style={{ width: 105 }} />
-            <col style={{ width: 64 }} />
+            <col className="actions-column actions-column--fixed" />
           </colgroup>
           <thead>
             <tr>
@@ -288,7 +410,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
                 direction={direction}
                 onSort={toggleSort}
               />
-              <th />
+              <th className="actions-column actions-column--fixed" />
             </tr>
           </thead>
           <tbody>
@@ -340,49 +462,14 @@ function Transfers({ downloads }: { downloads: Download[] }) {
                   )
                 </td>
                 <td>{formatRate(d.speed_bps)}</td>
-                <td>
-                  {d.status === "completed" ? (
-                    <button
-                      className="icon"
-                      disabled={clearOne.isPending}
-                      aria-label={`Clear completed notification for ${d.name}`}
-                      title="Clear completed notification (keeps Incoming file)"
-                      onClick={() => clearOne.mutate(d.hash)}
-                    >
-                      <Check size={15} />
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        className="icon"
-                        onClick={() =>
-                          one.mutate({
-                            hash: d.hash,
-                            status: d.status === "paused" ? "resume" : "pause",
-                          })
-                        }
-                      >
-                        {d.status === "paused" ? <Play size={15} /> : <Pause size={15} />}
-                      </button>
-                      <ConfirmDialog
-                        trigger={
-                          <button
-                            className="icon danger"
-                            disabled={remove.isPending}
-                            aria-label={`Delete ${d.name}`}
-                            title="Delete download"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        }
-                        title="Delete download?"
-                        description={`“${d.name}” and its active download data will be permanently removed from disk.`}
-                        actionLabel="Delete download"
-                        dangerous
-                        onConfirm={() => remove.mutate(d.hash)}
-                      />
-                    </>
-                  )}
+                <td className="actions-column actions-column--fixed">
+                  <div className="transfer-actions__inline">{transferActions(d)}</div>
+                  <details className="transfer-actions__menu">
+                    <summary className="icon" aria-label={`Actions for ${d.name}`} title="Actions">
+                      <MoreHorizontal size={16} />
+                    </summary>
+                    <div>{transferActions(d)}</div>
+                  </details>
                 </td>
               </tr>
             ))}
@@ -402,32 +489,49 @@ function Uploads() {
     queryFn: api.uploadClients,
     refetchInterval: 10_000,
   });
-  const peers = [...(uploads.data?.clients ?? [])].sort((left, right) => {
-    const value = (peer: UploadPeer) =>
-      sort === "peer"
-        ? peer.client_name || peer.ip
-        : sort === "file"
-          ? peer.upload_file_name
-          : sort === "client"
-            ? `${peer.software} ${peer.software_version}`
-            : peer.upload_speed_bps;
-    const leftValue = value(left);
-    const rightValue = value(right);
-    const comparison =
-      typeof leftValue === "number"
-        ? leftValue - (rightValue as number)
-        : String(leftValue).localeCompare(String(rightValue));
-    return direction === "asc" ? comparison : -comparison;
-  });
+  const [filter, setFilter] = useState("");
+  const peers = (uploads.data?.clients ?? [])
+    .filter((peer) =>
+      `${peer.client_name} ${peer.ip} ${peer.upload_file_name} ${peer.software} ${peer.software_version}`
+        .toLowerCase()
+        .includes(filter.toLowerCase()),
+    )
+    .sort((left, right) => {
+      const value = (peer: UploadPeer) =>
+        sort === "peer"
+          ? peer.client_name || peer.ip
+          : sort === "file"
+            ? peer.upload_file_name
+            : sort === "client"
+              ? `${peer.software} ${peer.software_version}`
+              : peer.upload_speed_bps;
+      const leftValue = value(left);
+      const rightValue = value(right);
+      const comparison =
+        typeof leftValue === "number"
+          ? leftValue - (rightValue as number)
+          : String(leftValue).localeCompare(String(rightValue));
+      return direction === "asc" ? comparison : -comparison;
+    });
   return (
     <section className="panel upload-panel">
       <div className="panel-title">
         <h2>Uploading now</h2>
         <span>{uploads.data?.clients.length ?? 0} active</span>
       </div>
+      <div className="upload-filter">
+        <input
+          aria-label="Filter uploads"
+          placeholder="Filter peer, file, or client"
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
+        />
+      </div>
       {uploads.isError ? (
         <p className="empty">Unable to load upload activity.</p>
-      ) : uploads.data?.clients.length ? (
+      ) : !uploads.data?.clients.length ? (
+        <p className="empty">No active uploads.</p>
+      ) : peers.length ? (
         <div className="table-wrap">
           <table className="data-table">
             <colgroup>
@@ -485,14 +589,25 @@ function Uploads() {
           </table>
         </div>
       ) : (
-        <p className="empty">No active uploads.</p>
+        <p className="empty">No uploads match this filter.</p>
       )}
     </section>
   );
 }
 export function DashboardPage() {
   const { logout } = useSession();
-  const [view, setView] = useState<"dashboard" | "search" | "servers" | "categories">("dashboard");
+  const [view, setView] = useState<
+    | "dashboard"
+    | "search"
+    | "servers"
+    | "categories"
+    | "shared"
+    | "kad"
+    | "logs"
+    | "statistics"
+    | "preferences"
+    | "peers"
+  >("dashboard");
   const status = useQuery({ queryKey: queryKeys.status, queryFn: api.status });
   const downloads = useQuery({
     queryKey: queryKeys.downloads,
@@ -515,6 +630,11 @@ export function DashboardPage() {
     { id: "search" as const, label: "Search", icon: Search },
     { id: "servers" as const, label: "Servers", icon: Server },
     { id: "categories" as const, label: "Categories", icon: FolderTree },
+    { id: "shared" as const, label: "Shared", icon: Share2 },
+    { id: "kad" as const, label: "Kad", icon: Network },
+    { id: "logs" as const, label: "Logs", icon: ScrollText },
+    { id: "statistics" as const, label: "Statistics", icon: ChartNoAxesCombined },
+    { id: "peers" as const, label: "Peers", icon: UsersRound },
   ];
   const body =
     view === "search" ? (
@@ -525,6 +645,20 @@ export function DashboardPage() {
       />
     ) : view === "categories" ? (
       <CategoriesView />
+    ) : view === "shared" ? (
+      <SharedFilesView />
+    ) : view === "kad" ? (
+      <KadView />
+    ) : view === "logs" ? (
+      <LogsView />
+    ) : view === "statistics" ? (
+      <Suspense fallback={<main className="loading">Loading statistics…</main>}>
+        <StatisticsView />
+      </Suspense>
+    ) : view === "preferences" ? (
+      <PreferencesView />
+    ) : view === "peers" ? (
+      <PeersView />
     ) : (
       <div className="content">
         <h1>Dashboard</h1>
@@ -538,6 +672,7 @@ export function DashboardPage() {
           <Metric label="Sources" value={String(s.queue.total_source_count)} />
           <Metric label="Upload queue" value={String(s.queue.upload_queue_length)} />
         </div>
+        <UpdateStatus />
         <Transfers downloads={downloads.data?.downloads ?? []} />
         <Uploads />
       </div>
@@ -570,7 +705,10 @@ export function DashboardPage() {
             {label}
           </button>
         ))}
-        <button disabled>
+        <button
+          className={view === "preferences" ? "active" : ""}
+          onClick={() => setView("preferences")}
+        >
           <Settings size={17} aria-hidden="true" />
           Preferences
         </button>

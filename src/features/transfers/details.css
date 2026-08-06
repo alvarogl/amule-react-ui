@@ -36,6 +36,80 @@
   padding-left: 18px;
   line-height: 1.5;
 }
+.drawer li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.detail-stats {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.detail-stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.detail-stats dt {
+  color: #91a4b8;
+}
+.detail-stats dd {
+  margin: 0;
+  text-align: right;
+}
+.detail-part-progress {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5px, 1fr));
+  gap: 2px;
+  margin-top: 12px;
+}
+.detail-part {
+  min-height: 8px;
+  border-radius: 2px;
+  background: #26394d;
+}
+.detail-part--complete {
+  background: #4fb286;
+}
+.detail-part--transferring {
+  background: #7bdbff;
+}
+.detail-part--corrupt {
+  background: #d65b68;
+}
+.detail-action,
+.detail-actions .muted {
+  padding: 5px 7px;
+  font-size: 11px;
+}
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.detail-source-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  color: #91a4b8;
+  font-size: 12px;
+}
+.detail-source-list span,
+.detail-a4af-status span {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #203246;
+}
+.detail-a4af-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #91a4b8;
+  font-size: 13px;
+}
 .drawer-close {
   position: absolute;
   right: 16px;

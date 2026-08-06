@@ -1,11 +1,14 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
-import { formatMebibytes } from "@/shared/lib/formatters";
+import { formatDuration, formatMebibytes } from "@/shared/lib/formatters";
+import { getErrorMessage } from "@/shared/lib/errors";
 
 export function TransferDetails({ hash, name }: { hash: string; name: string }) {
+  const client = useQueryClient();
   const detail = useQuery({
     queryKey: queryKeys.download(hash),
     queryFn: () => api.downloadDetail(hash),
@@ -22,7 +25,28 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
     queryKey: queryKeys.downloadA4af(hash),
     queryFn: () => api.downloadA4af(hash),
   });
+  const rename = useMutation({
+    mutationFn: (nextName: string) => api.renameDownload(hash, nextName),
+    onSuccess: () => {
+      toast.success("Download name updated.");
+      void client.invalidateQueries({ queryKey: queryKeys.downloads });
+      void client.invalidateQueries({ queryKey: queryKeys.download(hash) });
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+  const swap = useMutation({
+    mutationFn: (action: "swap_this" | "swap_this_auto" | "swap_others") =>
+      api.a4afAction(hash, action),
+    onSuccess: () => {
+      toast.success("A4AF source swapping updated.");
+      void client.invalidateQueries({ queryKey: queryKeys.downloadA4af(hash) });
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
   const data = detail.data;
+  const parts = data?.progress?.parts ?? [];
+  const partState = (state: string) =>
+    ["complete", "transferring", "corrupt"].includes(state) ? state : "empty";
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
@@ -44,11 +68,58 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
               <p className="subtle">
                 {data.status} · {data.size ? formatMebibytes(data.size) : "Size unavailable"}
               </p>
+              <h3>Availability</h3>
+              <dl className="detail-stats">
+                <div>
+                  <dt>Sources</dt>
+                  <dd>
+                    {data.sources
+                      ? `${data.sources.total} total · ${data.sources.transferring} transferring · ${data.sources.a4af} A4AF`
+                      : "Unavailable"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Available parts</dt>
+                  <dd>
+                    {data.part_count === undefined
+                      ? "Unavailable"
+                      : `${data.available_part_count ?? 0} / ${data.part_count}`}
+                  </dd>
+                </div>
+                <div>
+                  <dt>ETA</dt>
+                  <dd>
+                    {data.remaining_time === undefined || data.remaining_time < 0
+                      ? "Unavailable"
+                      : formatDuration(data.remaining_time)}
+                  </dd>
+                </div>
+              </dl>
+              {parts.length ? (
+                <div className="detail-part-progress" aria-label="Part availability">
+                  {parts.map((part, index) => (
+                    <span
+                      className={`detail-part detail-part--${partState(part.state)}`}
+                      key={index}
+                      title={`Part ${index + 1}: ${part.state} · ${part.sources} source${part.sources === 1 ? "" : "s"}`}
+                    />
+                  ))}
+                </div>
+              ) : null}
               <h3>Alternate filenames</h3>
               <ul>
                 {names.data?.filenames.map((item) => (
                   <li key={item.name}>
-                    {item.name} <small>({item.count})</small>
+                    <span>
+                      {item.name} <small>({item.count})</small>
+                    </span>
+                    <button
+                      className="muted detail-action"
+                      disabled={rename.isPending || item.name === data.name}
+                      onClick={() => rename.mutate(item.name)}
+                    >
+                      Use name
+                    </button>
                   </li>
                 )) ?? <li>None reported.</li>}
               </ul>
@@ -67,7 +138,42 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
                 )}
               </ul>
               <h3>A4AF sources</h3>
-              <p>{a4af.data?.a4af?.length ?? 0} asked-for-another-file source(s).</p>
+              <p className="detail-a4af-status">
+                {a4af.data?.sources.length
+                  ? `${a4af.data.sources.length} source${a4af.data.sources.length === 1 ? "" : "s"}`
+                  : "No sources"}
+                <span>Auto {a4af.data?.a4af_auto ? "on" : "off"}</span>
+              </p>
+              <div className="detail-actions">
+                <button
+                  className="muted"
+                  disabled={swap.isPending}
+                  onClick={() => swap.mutate("swap_this")}
+                >
+                  Take sources
+                </button>
+                <button
+                  className="muted"
+                  disabled={swap.isPending}
+                  onClick={() => swap.mutate("swap_others")}
+                >
+                  Release sources
+                </button>
+                <button
+                  className="muted"
+                  disabled={swap.isPending}
+                  onClick={() => swap.mutate("swap_this_auto")}
+                >
+                  Toggle automatic
+                </button>
+              </div>
+              {a4af.data?.sources.length ? (
+                <div className="detail-source-list">
+                  {a4af.data.sources.map((source) => (
+                    <span key={source}>#{source}</span>
+                  ))}
+                </div>
+              ) : null}
             </>
           )}
         </Dialog.Content>

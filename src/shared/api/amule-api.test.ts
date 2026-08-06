@@ -1,6 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { unauthorizedEvent } from "@/shared/auth/unauthorized";
-import { api, downloadsSchema, searchResultsSchema, statusSchema } from "./amule-api";
+import {
+  api,
+  amuleLogSchema,
+  clientsSchema,
+  downloadsSchema,
+  kadSchema,
+  searchResultsSchema,
+  sharedDirectoriesSchema,
+  sharedFilesSchema,
+  statusSchema,
+  versionSchema,
+  statisticsGraphSchema,
+  statisticsTreeSchema,
+} from "./amule-api";
 
 afterEach(() => vi.unstubAllGlobals());
 describe("aMule schemas", () => {
@@ -14,6 +27,22 @@ describe("aMule schemas", () => {
         queue: { upload_queue_length: 0, total_source_count: 3 },
       }).ed2k.low_id,
     ).toBe(false));
+  it("accepts daemon update availability", () =>
+    expect(
+      versionSchema.parse({
+        name: "amuleapi",
+        api_version: "v0",
+        amule_version: "3.0.1",
+        daemon_version: "3.0.1",
+        update: {
+          check_enabled: true,
+          checked: true,
+          latest_version: "3.0.2",
+          update_available: true,
+          last_checked: 1,
+        },
+      }).update.update_available,
+    ).toBe(true));
   it("rejects a malformed download response", () =>
     expect(() => downloadsSchema.parse({ downloads: [{ hash: 1 }] })).toThrow());
   it("accepts search ratings and Kad notes", () =>
@@ -36,6 +65,99 @@ describe("aMule schemas", () => {
         progress: { state: "finished", kind: "global", percent: 100 },
       }).results[0].comments,
     ).toHaveLength(1));
+  it("accepts a shared-file list entry", () =>
+    expect(
+      sharedFilesSchema.parse({
+        shared: [
+          {
+            hash: "hash",
+            name: "file",
+            ed2k_link: "ed2k://|file|file|1|hash|/",
+            size: 1,
+            priority: "normal",
+            priority_auto: false,
+            complete_sources: 2,
+            xfer: { session: 0, total: 1 },
+            requests: { session: 0, total: 1 },
+            accepts: { session: 0, total: 1 },
+            upload_speed_bps: 0,
+            uploading: 0,
+            last_upload: 0,
+            shared_since: 0,
+          },
+        ],
+      }).shared,
+    ).toHaveLength(1));
+  it("accepts share roots with their recursion setting", () =>
+    expect(
+      sharedDirectoriesSchema.parse({
+        directories: [{ path: "/media", recursive: true }],
+      }).directories[0],
+    ).toEqual({ path: "/media", recursive: true }));
+  it("accepts the detailed Kad status contract", () =>
+    expect(
+      kadSchema.parse({
+        state: "connected",
+        firewalled: false,
+        firewalled_udp: false,
+        in_lan_mode: false,
+        ip: "203.0.113.5",
+        network: { users: 1, files: 2, nodes: 3 },
+        indexed: { sources: 4, keywords: 5, notes: 6, load: 7 },
+      }).network.nodes,
+    ).toBe(3));
+  it("accepts the structured aMule log buffer", () =>
+    expect(amuleLogSchema.parse({ lines: ["one"], total_cached: 2, returned: 1 }).lines).toEqual([
+      "one",
+    ]));
+  it("accepts a peer list entry with live transfer fields", () =>
+    expect(
+      clientsSchema.parse({
+        clients: [
+          {
+            client_ecid: 42,
+            client_name: "peer",
+            ip: "203.0.113.42",
+            software: "amule",
+            software_version: "2.3.3",
+            upload_state: "uploading",
+            upload_file_name: "file.iso",
+            upload_speed_bps: 10,
+            download_state: "idle",
+            download_speed_bps: 0,
+          },
+        ],
+      }).clients[0].client_ecid,
+    ).toBe(42));
+  it("accepts typed statistics tree values and graph samples", () => {
+    expect(
+      statisticsTreeSchema.parse({
+        nodes: [
+          {
+            key: "upload_data",
+            label: "Total uploaded: %s",
+            values: [
+              {
+                type: "bytes",
+                value: 1024,
+                extra: { type: "bytes", value: 2048 },
+              },
+            ],
+            children: [],
+          },
+        ],
+      }).nodes,
+    ).toHaveLength(1);
+    expect(
+      statisticsGraphSchema.parse({
+        graph: "download",
+        unit: "bps",
+        interval_seconds: 1,
+        points: [{ t: "2026-01-01T00:00:00Z", t_unix: 1, value: 42 }],
+        session: { download_bytes: 1, upload_bytes: 2, kad_bytes: 3 },
+      }).points[0].value,
+    ).toBe(42);
+  });
 });
 
 describe("api authentication", () => {
@@ -55,5 +177,28 @@ describe("api authentication", () => {
     await expect(api.status()).rejects.toThrow("Expired");
     expect(listener).toHaveBeenCalledTimes(1);
     window.removeEventListener(unauthorizedEvent, listener);
+  });
+});
+
+describe("log mutations", () => {
+  it("accepts a no-content log clear response", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
+
+    await expect(api.clearAmuleLog()).resolves.toEqual({});
+  });
+});
+
+describe("transfer detail mutations", () => {
+  it("uses the documented A4AF source envelope", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ a4af_auto: true, sources: [12, 34] }), {
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+
+    await expect(api.downloadA4af("hash")).resolves.toEqual({ a4af_auto: true, sources: [12, 34] });
   });
 });

@@ -65,7 +65,44 @@
 .upload-panel {
   margin-top: 16px;
 }
+.upload-filter {
+  padding: 10px 18px;
+  border-bottom: 1px solid #26394d;
+}
+.upload-filter input {
+  width: min(360px, 100%);
+}
 .bulk-tools .bulk-remove {
   background: #7f2733;
   color: #ffe2e5;
+}
+.transfer-actions__menu {
+  display: none;
+  position: relative;
+}
+.transfer-actions__menu summary {
+  list-style: none;
+}
+.transfer-actions__menu summary::-webkit-details-marker {
+  display: none;
+}
+.transfer-actions__menu > div {
+  position: absolute;
+  z-index: 4;
+  right: 0;
+  display: flex;
+  gap: 5px;
+  padding: 6px;
+  border: 1px solid #395066;
+  border-radius: 7px;
+  background: #121b26;
+  box-shadow: 0 8px 24px #0008;
+}
+@media (max-width: 760px) {
+  .transfer-actions__inline {
+    display: none;
+  }
+  .transfer-actions__menu {
+    display: inline-block;
+  }
 }
