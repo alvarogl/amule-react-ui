@@ -6,7 +6,7 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
-import { ApiError, api } from "@/shared/api/amule-api";
+import { api } from "@/shared/api/amule-api";
 
 type Session = {
   ready: boolean;
@@ -53,7 +53,4 @@ export function useSession() {
   const session = useContext(SessionContext);
   if (!session) throw new Error("SessionProvider missing");
   return session;
-}
-export function isUnauthorized(error: unknown) {
-  return error instanceof ApiError && error.status === 401;
 }

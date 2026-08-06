@@ -5,6 +5,7 @@ Describe the user-visible or technical change and link related issues.
 ## Validation
 
 - [ ] `pnpm format:check`
+- [ ] `pnpm lint`
 - [ ] `pnpm test`
 - [ ] `pnpm build`
 - [ ] I verified affected UI behavior against a local `amuleapi` instance, when applicable.

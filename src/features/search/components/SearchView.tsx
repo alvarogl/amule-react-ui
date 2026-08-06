@@ -43,8 +43,11 @@ export function SearchView() {
     enabled: active !== undefined,
     refetchInterval: 4_000,
   });
+  const activeSearch = searches.data?.searches.find((search) => search.search_id === active);
+  const isActiveSearchFinished = results.data?.progress.state === "finished";
+  const displayedQuery = isActiveSearchFinished && query === activeSearch?.query ? "" : query;
   const start = useMutation({
-    mutationFn: () => api.startSearch(query, kind, filters()),
+    mutationFn: (searchQuery: string) => api.startSearch(searchQuery, kind, filters()),
     onSuccess: (data) => {
       setActive(data.search_id);
       void queryClient.invalidateQueries({ queryKey: queryKeys.searches });
@@ -84,11 +87,8 @@ export function SearchView() {
     onError: (error) => toast.error(error.message),
   });
   useEffect(() => {
-    if (results.data?.progress.state === "finished") {
-      setQuery("");
-      input.current?.focus();
-    }
-  }, [results.data?.progress.state]);
+    if (isActiveSearchFinished) input.current?.focus();
+  }, [isActiveSearchFinished]);
 
   function filters(): SearchFilters {
     const mib = (value: string) =>
@@ -105,14 +105,14 @@ export function SearchView() {
   }
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (!query.trim()) return toast.warning("Enter a search query.");
+    if (!displayedQuery.trim()) return toast.warning("Enter a search query.");
     if (
       (minSize && (!Number.isFinite(Number(minSize)) || Number(minSize) < 0)) ||
       (maxSize && (!Number.isFinite(Number(maxSize)) || Number(maxSize) < 0)) ||
       (minAvail && (!Number.isInteger(Number(minAvail)) || Number(minAvail) < 0))
     )
       return toast.warning("Use non-negative sizes and a whole minimum availability.");
-    start.mutate();
+    start.mutate(displayedQuery);
   }
   const orderedResults = [...(results.data?.results ?? [])].sort((left, right) => {
     const comparison =
@@ -130,7 +130,7 @@ export function SearchView() {
         <input
           ref={input}
           placeholder="Find files"
-          value={query}
+          value={displayedQuery}
           onChange={(event) => setQuery(event.target.value)}
         />
         <select value={kind} onChange={(event) => setKind(event.target.value as typeof kind)}>

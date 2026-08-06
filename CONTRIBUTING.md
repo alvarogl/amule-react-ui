@@ -13,6 +13,7 @@ Before opening a pull request, run:
 
 ```bash
 pnpm format:check
+pnpm lint
 pnpm test
 pnpm build
 ```
