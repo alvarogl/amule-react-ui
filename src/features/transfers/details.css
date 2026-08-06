@@ -51,6 +51,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  margin: 10px 0;
 }
 .detail-source-list {
   display: flex;
