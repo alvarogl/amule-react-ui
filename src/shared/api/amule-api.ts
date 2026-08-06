@@ -318,11 +318,10 @@ export const api = {
       body: JSON.stringify({ nodes_url }),
     }),
   amuleLog: (tail = 500) => request(`/logs/amule?tail=${tail}`, amuleLogSchema),
-  clearAmuleLog: () =>
-    request("/logs/amule", z.object({ ok: z.literal(true) }).passthrough(), { method: "DELETE" }),
+  clearAmuleLog: () => request("/logs/amule", z.unknown(), { method: "DELETE" }),
   serverInfoLog: (tail = 500) => request(`/logs/serverinfo?tail=${tail}`, serverInfoLogSchema),
   clearServerInfoLog: () =>
-    request("/logs/serverinfo", z.object({ ok: z.literal(true) }).passthrough(), {
+    request("/logs/serverinfo", z.unknown(), {
       method: "DELETE",
     }),
   reloadSharedFiles: () =>

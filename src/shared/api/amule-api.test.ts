@@ -111,3 +111,11 @@ describe("api authentication", () => {
     window.removeEventListener(unauthorizedEvent, listener);
   });
 });
+
+describe("log mutations", () => {
+  it("accepts a no-content log clear response", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
+
+    await expect(api.clearAmuleLog()).resolves.toEqual({});
+  });
+});
