@@ -113,10 +113,10 @@ export function SharedFilesView() {
           <div className="table-wrap">
             <table className="data-table shared-table">
               <colgroup>
-                <col style={{ width: 460 }} />
-                <col style={{ width: 120 }} />
-                <col style={{ width: 120 }} />
-                <col style={{ width: 130 }} />
+                <col style={{ width: "48%" }} />
+                <col style={{ width: "15%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "17%" }} />
                 <col className="actions-column" />
               </colgroup>
               <thead>
@@ -144,7 +144,7 @@ export function SharedFilesView() {
                   />
                   <SortableHeader
                     column="speed"
-                    label="Upload speed"
+                    label="Speed"
                     sort={sort}
                     direction={direction}
                     onSort={toggleSort}

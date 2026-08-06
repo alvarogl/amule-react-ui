@@ -1,3 +1,6 @@
+.data-table.shared-table {
+  min-width: 0;
+}
 .shared-table td small {
   display: block;
   margin-top: 3px;
