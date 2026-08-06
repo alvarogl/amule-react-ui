@@ -21,6 +21,8 @@ test("covers core session and mutation workflows", async ({ page }) => {
   let stoppedSearch: unknown;
   let addedServer: unknown;
   let createdCategory: unknown;
+  let kadDisconnect: unknown;
+  let clearedLog = false;
   await page.route("**/api/v0/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -99,6 +101,12 @@ test("covers core session and mutation workflows", async ({ page }) => {
         network: { users: 1, files: 2, nodes: 3 },
         indexed: { sources: 4, keywords: 5, notes: 6, load: 7 },
       });
+    } else if (url.pathname.endsWith("/networks/disconnect")) {
+      kadDisconnect = request.postDataJSON();
+      await json({ ok: true });
+    } else if (url.pathname.endsWith("/logs/amule") && request.method() === "DELETE") {
+      clearedLog = true;
+      await json({});
     } else if (url.pathname.endsWith("/logs/amule")) {
       await json({ lines: [], total_cached: 0, returned: 0 });
     } else if (url.pathname.endsWith("/logs/serverinfo")) {
@@ -195,6 +203,16 @@ test("covers core session and mutation workflows", async ({ page }) => {
     await page.locator("nav").getByRole("button", { name: navigation }).click();
     await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
   }
+
+  await page.locator("nav").getByRole("button", { name: "Kad" }).click();
+  await page.getByRole("button", { name: "Disconnect" }).click();
+  await expect.poll(() => kadDisconnect).toEqual({ network: "kad" });
+
+  await page.locator("nav").getByRole("button", { name: "Logs" }).click();
+  await page.getByRole("button", { name: "Clear active log" }).click();
+  await expect(page.getByRole("heading", { name: "Clear aMule log?" })).toBeVisible();
+  await page.getByRole("button", { name: "Clear log", exact: true }).click();
+  await expect.poll(() => clearedLog).toBe(true);
 
   expireNextStatus = true;
   await page.reload();
