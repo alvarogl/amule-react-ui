@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { unauthorizedEvent } from "@/shared/auth/unauthorized";
 import {
   api,
+  amuleLogSchema,
   downloadsSchema,
   kadSchema,
   searchResultsSchema,
@@ -85,6 +86,10 @@ describe("aMule schemas", () => {
         indexed: { sources: 4, keywords: 5, notes: 6, load: 7 },
       }).network.nodes,
     ).toBe(3));
+  it("accepts the structured aMule log buffer", () =>
+    expect(amuleLogSchema.parse({ lines: ["one"], total_cached: 2, returned: 1 }).lines).toEqual([
+      "one",
+    ]));
 });
 
 describe("api authentication", () => {

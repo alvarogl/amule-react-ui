@@ -15,6 +15,7 @@ import "@/features/search/search.css";
 import "@/features/servers/servers.css";
 import "@/features/categories/categories.css";
 import "@/features/kad/kad.css";
+import "@/features/logs/logs.css";
 import "@/features/shared/shared.css";
 import "@/shared/styles/data-table.css";
 import "@/shared/styles/confirm-dialog.css";

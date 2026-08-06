@@ -147,6 +147,16 @@ export const kadSchema = z.object({
   }),
   buddy: z.object({ status: z.string(), ip: z.string(), port: z.number() }).optional(),
 });
+export const amuleLogSchema = z.object({
+  lines: z.array(z.string()),
+  total_cached: z.number(),
+  returned: z.number(),
+});
+export const serverInfoLogSchema = z.object({
+  text: z.string(),
+  total_bytes: z.number(),
+  returned_bytes: z.number(),
+});
 const sharedDirectoryMutationSchema = z
   .object({
     ok: z.literal(true),
@@ -306,6 +316,14 @@ export const api = {
     request("/kad/update", z.object({ ok: z.literal(true), nodes_url: z.string() }), {
       method: "POST",
       body: JSON.stringify({ nodes_url }),
+    }),
+  amuleLog: (tail = 500) => request(`/logs/amule?tail=${tail}`, amuleLogSchema),
+  clearAmuleLog: () =>
+    request("/logs/amule", z.object({ ok: z.literal(true) }).passthrough(), { method: "DELETE" }),
+  serverInfoLog: (tail = 500) => request(`/logs/serverinfo?tail=${tail}`, serverInfoLogSchema),
+  clearServerInfoLog: () =>
+    request("/logs/serverinfo", z.object({ ok: z.literal(true) }).passthrough(), {
+      method: "DELETE",
     }),
   reloadSharedFiles: () =>
     request("/shared/reload", z.object({ ok: z.literal(true) }).passthrough(), { method: "POST" }),

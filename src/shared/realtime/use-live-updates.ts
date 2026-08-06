@@ -13,6 +13,8 @@ const snapshots = [
   queryKeys.categories,
   queryKeys.sharedFiles,
   queryKeys.kad,
+  queryKeys.amuleLog,
+  queryKeys.serverInfoLog,
   queryKeys.searches,
 ];
 export function useLiveUpdates() {

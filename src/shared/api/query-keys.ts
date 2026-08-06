@@ -8,6 +8,8 @@ export const queryKeys = {
   sharedFile: (hash: string) => ["shared-file", hash] as const,
   sharedDirectories: ["shared-directories"] as const,
   kad: ["kad"] as const,
+  amuleLog: ["logs", "amule"] as const,
+  serverInfoLog: ["logs", "serverinfo"] as const,
   searches: ["searches"] as const,
   searchResults: (searchId: number | undefined) => ["search-results", searchId] as const,
   download: (hash: string) => ["download", hash] as const,

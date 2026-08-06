@@ -11,6 +11,7 @@ import {
   Pause,
   Play,
   Search,
+  ScrollText,
   Server,
   Settings,
   Share2,
@@ -33,6 +34,7 @@ import { useSortState } from "@/shared/hooks/use-sort-state";
 import { getErrorMessage } from "@/shared/lib/errors";
 import { SharedFilesView } from "@/features/shared/components/SharedFilesView";
 import { KadView } from "@/features/kad/components/KadView";
+import { LogsView } from "@/features/logs/components/LogsView";
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
 
@@ -508,7 +510,7 @@ function Uploads() {
 export function DashboardPage() {
   const { logout } = useSession();
   const [view, setView] = useState<
-    "dashboard" | "search" | "servers" | "categories" | "shared" | "kad"
+    "dashboard" | "search" | "servers" | "categories" | "shared" | "kad" | "logs"
   >("dashboard");
   const status = useQuery({ queryKey: queryKeys.status, queryFn: api.status });
   const downloads = useQuery({
@@ -534,6 +536,7 @@ export function DashboardPage() {
     { id: "categories" as const, label: "Categories", icon: FolderTree },
     { id: "shared" as const, label: "Shared", icon: Share2 },
     { id: "kad" as const, label: "Kad", icon: Network },
+    { id: "logs" as const, label: "Logs", icon: ScrollText },
   ];
   const body =
     view === "search" ? (
@@ -548,6 +551,8 @@ export function DashboardPage() {
       <SharedFilesView />
     ) : view === "kad" ? (
       <KadView />
+    ) : view === "logs" ? (
+      <LogsView />
     ) : (
       <div className="content">
         <h1>Dashboard</h1>
