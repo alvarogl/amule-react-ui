@@ -499,7 +499,15 @@ export function DashboardPage() {
     queryFn: api.downloads,
   });
   useLiveUpdates();
-  if (!status.data) return <main className="loading">Connecting to aMule…</main>;
+  if (status.isPending) return <main className="loading">Connecting to aMule…</main>;
+  if (status.isError)
+    return (
+      <main className="loading query-error" role="alert">
+        <p>Unable to load aMule status: {getErrorMessage(status.error)}</p>
+        <button onClick={() => void status.refetch()}>Retry</button>
+      </main>
+    );
+  if (!status.data) return null;
   const s = status.data;
   const idState = s.ed2k.state !== "connected" ? "unknown" : s.ed2k.low_id ? "low" : "high";
   const navigation = [

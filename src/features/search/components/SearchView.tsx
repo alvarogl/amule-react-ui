@@ -7,6 +7,8 @@ import { SortableHeader } from "@/shared/components/SortableHeader";
 import { queryKeys } from "@/shared/api/query-keys";
 import { useSortState } from "@/shared/hooks/use-sort-state";
 import { getErrorMessage } from "@/shared/lib/errors";
+import { SearchResultNotesDialog } from "./SearchResultNotesDialog";
+import { QueryNotice } from "@/shared/components/QueryNotice";
 
 const fileTypes = [
   "any",
@@ -27,6 +29,7 @@ export function SearchView() {
   const [minSize, setMinSize] = useState("");
   const [maxSize, setMaxSize] = useState("");
   const [minAvail, setMinAvail] = useState("");
+  const [downloadCategory, setDownloadCategory] = useState("0");
   const [chosenNames, setChosenNames] = useState<Record<string, string>>({});
   const [deletingSearches, setDeletingSearches] = useState<Set<number>>(new Set());
   const { sort, direction, toggleSort } = useSortState<"name" | "sources" | "size">("name");
@@ -38,6 +41,7 @@ export function SearchView() {
     queryFn: api.searches,
     refetchInterval: 10_000,
   });
+  const categories = useQuery({ queryKey: queryKeys.categories, queryFn: api.categories });
   const results = useQuery({
     queryKey: queryKeys.searchResults(active),
     queryFn: () => api.searchResults(active!),
@@ -45,6 +49,10 @@ export function SearchView() {
     refetchInterval: 4_000,
   });
   const activeSearch = searches.data?.searches.find((search) => search.search_id === active);
+  const downloadCategories = [
+    { index: 0, name: "Uncategorized" },
+    ...(categories.data?.categories.filter((category) => category.index !== 0) ?? []),
+  ];
   const isActiveSearchFinished = results.data?.progress.state === "finished";
   const displayedQuery = isActiveSearchFinished && query === activeSearch?.query ? "" : query;
   const start = useMutation({
@@ -57,11 +65,20 @@ export function SearchView() {
   });
   const download = useMutation({
     mutationFn: ({ hash, ecid }: { hash: string; ecid?: number }) =>
-      api.downloadSearchResult(hash, ecid),
+      api.downloadSearchResult(hash, {
+        ...(ecid ? { ecid } : {}),
+        category: Number(downloadCategory),
+      }),
     onSuccess: () => {
       toast.success("Search result added to transfers.");
       void queryClient.invalidateQueries({ queryKey: queryKeys.downloads });
     },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+  const requestNotes = useMutation({
+    mutationFn: api.requestSearchResultComments,
+    onSuccess: () =>
+      void queryClient.invalidateQueries({ queryKey: queryKeys.searchResults(active) }),
     onError: (error) => toast.error(getErrorMessage(error)),
   });
   const close = useMutation({
@@ -139,6 +156,19 @@ export function SearchView() {
           <option value="local">Local</option>
           <option value="kad">Kad</option>
         </select>
+        <label className="download-category">
+          Download to
+          <select
+            value={downloadCategory}
+            onChange={(event) => setDownloadCategory(event.target.value)}
+          >
+            {downloadCategories.map((category) => (
+              <option key={category.index} value={category.index}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </label>
         <button disabled={start.isPending}>
           <SearchIcon size={16} /> Search
         </button>
@@ -217,6 +247,11 @@ export function SearchView() {
           );
         })}
       </div>
+      <QueryNotice
+        loading={searches.isPending}
+        error={searches.error}
+        onRetry={() => void searches.refetch()}
+      />
       {results.data && (
         <section className="panel">
           <div className="panel-title">
@@ -234,7 +269,7 @@ export function SearchView() {
                   <col style={{ width: 440 }} />
                   <col style={{ width: 120 }} />
                   <col style={{ width: 120 }} />
-                  <col style={{ width: 58 }} />
+                  <col style={{ width: 102 }} />
                 </colgroup>
                 <thead>
                   <tr>
@@ -301,6 +336,11 @@ export function SearchView() {
                         </td>
                         <td>{(item.size / 1024 / 1024).toFixed(1)} MiB</td>
                         <td>
+                          <SearchResultNotesDialog
+                            result={item}
+                            requesting={requestNotes.isPending}
+                            onRequest={() => requestNotes.mutate(item.hash)}
+                          />
                           <button
                             className="icon"
                             disabled={item.already_have || download.isPending}
@@ -323,6 +363,13 @@ export function SearchView() {
             </div>
           )}
         </section>
+      )}
+      {active !== undefined && !results.data && (
+        <QueryNotice
+          loading={results.isPending}
+          error={results.error}
+          onRetry={() => void results.refetch()}
+        />
       )}
     </div>
   );

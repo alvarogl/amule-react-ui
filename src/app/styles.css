@@ -9,6 +9,7 @@
 }
 body {
   margin: 0;
+  background: inherit;
 }
 .loading,
 .login {
@@ -67,6 +68,19 @@ button:disabled {
 .shell {
   min-height: 100vh;
   background: #0b1017;
+}
+.query-error {
+  gap: 14px;
+  align-content: center;
+  color: #ff8895;
+}
+.query-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  color: #ff8895;
 }
 header {
   height: 56px;

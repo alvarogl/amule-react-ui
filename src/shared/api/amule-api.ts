@@ -53,6 +53,18 @@ export const searchResultsSchema = z.object({
         already_have: z.boolean(),
         sources: z.object({ total: z.number(), complete: z.number() }),
         children: z.array(z.object({ ecid: z.number(), name: z.string() })),
+        rating: z.number().optional(),
+        kad_comment_search_running: z.boolean().optional(),
+        comments: z
+          .array(
+            z.object({
+              username: z.string(),
+              filename: z.string(),
+              rating: z.number(),
+              comment: z.string(),
+            }),
+          )
+          .optional(),
       })
       .passthrough(),
   ),
@@ -117,6 +129,7 @@ export const sessionSchema = z.object({
 });
 export type Status = z.infer<typeof statusSchema>;
 export type Download = z.infer<typeof downloadSchema>;
+export type SearchResult = z.infer<typeof searchResultsSchema>["results"][number];
 export type SearchFilters = {
   file_type?: string;
   extension?: string;
@@ -178,10 +191,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ search_id: searchId, close: true }),
     }),
-  downloadSearchResult: (hash: string, ecid?: number) =>
+  downloadSearchResult: (hash: string, options: { ecid?: number; category?: number } = {}) =>
     request(`/search/results/${hash}/download`, z.object({ ok: z.literal(true) }).passthrough(), {
       method: "POST",
-      body: JSON.stringify(ecid === undefined ? {} : { ecid }),
+      body: JSON.stringify(options),
+    }),
+  requestSearchResultComments: (hash: string) =>
+    request(`/search/results/${hash}/comments`, z.object({ status: z.string() }).passthrough(), {
+      method: "POST",
     }),
   servers: () => request("/servers", serversSchema),
   uploadClients: () => request("/clients?filter=uploads", clientsSchema),

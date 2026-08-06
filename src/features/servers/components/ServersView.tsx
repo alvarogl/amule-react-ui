@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { queryKeys } from "@/shared/api/query-keys";
 import { useSortState } from "@/shared/hooks/use-sort-state";
 import { getErrorMessage } from "@/shared/lib/errors";
+import { QueryNotice } from "@/shared/components/QueryNotice";
 
 type ServerRow = Awaited<ReturnType<typeof api.servers>>["servers"][number];
 
@@ -160,7 +161,13 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
           <h2>Known servers</h2>
           <span>{servers.data?.servers.length ?? 0}</span>
         </div>
-        {servers.data?.servers.length ? (
+        {servers.isPending || servers.isError ? (
+          <QueryNotice
+            loading={servers.isPending}
+            error={servers.error}
+            onRetry={() => void servers.refetch()}
+          />
+        ) : servers.data?.servers.length ? (
           <div className="table-wrap">
             <table className="data-table server-table">
               <colgroup>
