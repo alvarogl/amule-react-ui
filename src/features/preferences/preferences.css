@@ -16,6 +16,18 @@
   align-items: center;
   gap: 6px;
 }
+.preference-advanced-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #b9cada;
+  font-size: 13px;
+}
+.preference-advanced-toggle input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
 .preference-restart {
   display: flex;
   align-items: center;

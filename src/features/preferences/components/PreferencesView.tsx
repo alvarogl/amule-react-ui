@@ -29,6 +29,39 @@ const restartKeys = new Set([
   "directories.incoming",
   "directories.temp",
 ]);
+const basicPreferenceFields: Record<string, string[]> = {
+  general: ["nickname", "local_host_name", "check_new_version"],
+  connection: [
+    "max_upload_kbps",
+    "max_download_kbps",
+    "upload_slot_kbps",
+    "tcp_port",
+    "udp_port",
+    "max_sources_per_file",
+    "max_connections",
+    "autoconnect",
+    "reconnect",
+    "network_ed2k",
+    "network_kad",
+    "upnp_enabled",
+  ],
+  directories: ["incoming", "temp", "auto_rescan", "follow_symlinks"],
+  files: [
+    "add_new_downloads_paused",
+    "new_downloads_auto_priority",
+    "prioritize_first_last_chunks",
+    "preallocate_full_file_size",
+    "stop_on_low_disk_space",
+    "min_free_space_mb",
+  ],
+  servers: ["remove_dead", "auto_update", "use_priority_system", "safe_connect", "update_url"],
+  security: [
+    "shared_files_visibility",
+    "ipfilter_clients",
+    "ipfilter_servers",
+    "obfuscation_enabled",
+  ],
+};
 
 function labelFor(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -135,20 +168,26 @@ function PreferenceGroup({
   title,
   value,
   draft,
+  visibleFields,
   onChange,
 }: {
   title: string;
   value: Record<string, unknown>;
   draft: Record<string, unknown>;
+  visibleFields?: string[];
   onChange: (key: string, value: unknown) => void;
 }) {
+  const entries = Object.entries(value).filter(
+    ([key]) => !visibleFields || visibleFields.includes(key),
+  );
+  if (!entries.length) return null;
   return (
     <section className="panel preference-group">
       <div className="panel-title">
         <h2>{labelFor(title)}</h2>
       </div>
       <div className="preference-fields">
-        {Object.entries(value).map(([key, item]) =>
+        {entries.map(([key, item]) =>
           isRecord(item) ? (
             <div className="preference-subgroup" key={key}>
               <h3>{labelFor(key)}</h3>
@@ -287,6 +326,7 @@ export function PreferencesView() {
   const client = useQueryClient();
   const preferences = useQuery({ queryKey: queryKeys.preferences, queryFn: api.preferences });
   const [draft, setDraft] = useState<Preferences>();
+  const [advanced, setAdvanced] = useState(false);
   const workingDraft = draft ?? preferences.data;
   const patch = useMemo(
     () =>
@@ -329,6 +369,14 @@ export function PreferencesView() {
       )}
       <div className="preference-toolbar">
         <span>{patch ? "Unsaved changes" : "No unsaved changes"}</span>
+        <label className="preference-advanced-toggle">
+          <input
+            type="checkbox"
+            checked={advanced}
+            onChange={(event) => setAdvanced(event.target.checked)}
+          />
+          Advanced view
+        </label>
         <button
           className="muted"
           disabled={!patch}
@@ -356,10 +404,11 @@ export function PreferencesView() {
                 title={group}
                 value={value as Record<string, unknown>}
                 draft={workingDraft[group] as Record<string, unknown>}
+                visibleFields={advanced ? undefined : (basicPreferenceFields[group] ?? [])}
                 onChange={(key, next) => updateGroup(group, key, next)}
               />
             ))}
-          <PasswordManager />
+          {advanced && <PasswordManager />}
         </div>
       ) : null}
     </div>
