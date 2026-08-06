@@ -132,7 +132,6 @@ export function LogsView() {
           <ol className="log-output" aria-live="polite" ref={output}>
             <li className="log-column-header" aria-hidden="true">
               <span>#</span>
-              <span>Timestamp</span>
               <span>Message</span>
             </li>
             {lines.map((line, index) => {
@@ -140,7 +139,6 @@ export function LogsView() {
               return (
                 <li className={`log-line log-line--${formatted.tone}`} key={`${line}-${index}`}>
                   <span className="log-line-number">{index + 1}</span>
-                  <time>{formatted.timestamp ?? "—"}</time>
                   <span>{formatted.message}</span>
                 </li>
               );

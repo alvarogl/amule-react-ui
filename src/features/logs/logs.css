@@ -63,7 +63,7 @@
 .log-column-header,
 .log-line {
   display: grid;
-  grid-template-columns: 48px 150px minmax(0, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr);
   gap: 10px;
   width: 100%;
   padding: 3px 18px;
@@ -86,8 +86,7 @@
 .log-line:hover {
   background: #172535;
 }
-.log-line-number,
-.log-line time {
+.log-line-number {
   color: #6f8499;
   user-select: none;
 }
@@ -111,13 +110,6 @@
   .log-column-header,
   .log-line {
     grid-template-columns: 34px minmax(0, 1fr);
-  }
-  .log-column-header span:nth-child(2),
-  .log-line time {
-    grid-column: 2;
-  }
-  .log-column-header span:last-child {
-    display: none;
   }
   .log-line time + span {
     grid-column: 2;

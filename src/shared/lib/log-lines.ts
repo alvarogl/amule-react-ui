@@ -1,5 +1,4 @@
 export type FormattedLogLine = {
-  timestamp?: string;
   message: string;
   tone: "default" | "warning" | "error" | "success";
 };
@@ -17,5 +16,5 @@ export function formatLogLine(line: string): FormattedLogLine {
       : /connected|complete|success|finished/.test(normalized)
         ? "success"
         : "default";
-  return { ...(match ? { timestamp: match[1] } : {}), message, tone };
+  return { message, tone };
 }
