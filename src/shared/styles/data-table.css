@@ -1,14 +1,17 @@
 .table-wrap {
   overflow-x: auto;
 }
+
 .data-table {
   table-layout: fixed;
   min-width: 720px;
 }
+
 .data-header {
   position: relative;
   padding: 0 !important;
 }
+
 .header-sort {
   display: flex;
   width: 100%;
@@ -21,29 +24,34 @@
   font: inherit;
   text-align: left;
 }
+
 .header-sort:hover {
   color: #d7e1ed;
 }
+
 .data-table td {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .data-table td:first-child {
   max-width: none;
 }
+
 .data-table input[type="checkbox"] {
   width: 16px;
   height: 16px;
   padding: 0;
   vertical-align: middle;
 }
+
 .actions-column {
-  width: 1%;
   min-width: max-content;
   white-space: nowrap;
   overflow: visible !important;
 }
+
 .data-table.server-table {
   table-layout: auto;
 }
