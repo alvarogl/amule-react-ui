@@ -40,13 +40,13 @@ printf '%s\n' \
   --amuleapi-conf "${config_dir}/amuleapi.conf" --bind-address 127.0.0.2 --http-port 4714
 
 [[ "$(<"${static_root}/index.html")" == '<main>new</main>' ]]
-rg -qx 'Enabled=1' "${config_dir}/amule.conf"
-rg -qx 'BindAddress=127.0.0.2' "${config_dir}/amule.conf"
-rg -qx 'HttpPort=4714' "${config_dir}/amule.conf"
-rg -qx "StaticRoot=${static_root}" "${config_dir}/amuleapi.conf"
+grep -Fqx -- 'Enabled=1' "${config_dir}/amule.conf"
+grep -Fqx -- 'BindAddress=127.0.0.2' "${config_dir}/amule.conf"
+grep -Fqx -- 'HttpPort=4714' "${config_dir}/amule.conf"
+grep -Fqx -- "StaticRoot=${static_root}" "${config_dir}/amuleapi.conf"
 
 "$INSTALLER" --rollback "$backup_dir"
 [[ "$(<"${static_root}/index.html")" == '<main>old</main>' ]]
-rg -qx 'Enabled=0' "${config_dir}/amule.conf"
-rg -qx 'HttpPort=9999' "${config_dir}/amule.conf"
-rg -qx 'StaticRoot=/old/ui' "${config_dir}/amuleapi.conf"
+grep -Fqx -- 'Enabled=0' "${config_dir}/amule.conf"
+grep -Fqx -- 'HttpPort=9999' "${config_dir}/amule.conf"
+grep -Fqx -- 'StaticRoot=/old/ui' "${config_dir}/amuleapi.conf"

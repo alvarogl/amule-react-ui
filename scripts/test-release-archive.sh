@@ -24,17 +24,17 @@ cmp "${first_output}/${archive}" "${second_output}/${archive}"
 (cd "$first_output" && sha256sum --check "${archive}.sha256")
 
 tar -tzf "${first_output}/${archive}" >"${fixture}/contents.txt"
-rg -qx "amule-react-ui-v${version}/dist/index.html" "${fixture}/contents.txt"
-rg -qx "amule-react-ui-v${version}/scripts/install-static-ui.sh" "${fixture}/contents.txt"
-rg -qx "amule-react-ui-v${version}/docs/amuleapi.conf.example" "${fixture}/contents.txt"
-rg -qx "amule-react-ui-v${version}/LICENSE" "${fixture}/contents.txt"
-rg -qx "amule-react-ui-v${version}/RELEASE-MANIFEST.json" "${fixture}/contents.txt"
-! rg -n '(^|/)\.env($|\.)|node_modules|amuleapi-passwords' "${fixture}/contents.txt"
+grep -Fqx -- "amule-react-ui-v${version}/dist/index.html" "${fixture}/contents.txt"
+grep -Fqx -- "amule-react-ui-v${version}/scripts/install-static-ui.sh" "${fixture}/contents.txt"
+grep -Fqx -- "amule-react-ui-v${version}/docs/amuleapi.conf.example" "${fixture}/contents.txt"
+grep -Fqx -- "amule-react-ui-v${version}/LICENSE" "${fixture}/contents.txt"
+grep -Fqx -- "amule-react-ui-v${version}/RELEASE-MANIFEST.json" "${fixture}/contents.txt"
+! grep -Eq '(^|/)\.env($|\.)|node_modules|amuleapi-passwords' "${fixture}/contents.txt"
 
 manifest="$(tar -xOzf "${first_output}/${archive}" "amule-react-ui-v${version}/RELEASE-MANIFEST.json")"
-printf '%s\n' "$manifest" | rg -q '"name": "amule-react-ui"'
-printf '%s\n' "$manifest" | rg -q "\"version\": \"${version}\""
-printf '%s\n' "$manifest" | rg -q '"source_date_epoch": 1700000000'
+printf '%s\n' "$manifest" | grep -Fq '"name": "amule-react-ui"'
+printf '%s\n' "$manifest" | grep -Fq "\"version\": \"${version}\""
+printf '%s\n' "$manifest" | grep -Fq '"source_date_epoch": 1700000000'
 
 mkdir -p -- "${fixture}/extracted"
 tar -xzf "${first_output}/${archive}" -C "${fixture}/extracted"
