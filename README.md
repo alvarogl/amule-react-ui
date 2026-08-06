@@ -56,4 +56,4 @@ pnpm build
 
 ## Continuous integration
 
-GitHub Actions runs formatting validation, tests, and the production build on pull requests targeting `main`, pushes to `main`, and manual dispatches. It intentionally does not deploy anything; CD will be added separately. See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution and review workflow and [SECURITY.md](SECURITY.md) for responsible disclosure guidance.
+GitHub Actions runs formatting validation, tests, and the production build on every pull request, pushes to `main`, and manual dispatches. It intentionally does not deploy anything; CD will be added separately. See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution and review workflow and [SECURITY.md](SECURITY.md) for responsible disclosure guidance.
