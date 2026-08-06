@@ -25,6 +25,20 @@ test("covers core session and mutation workflows", async ({ page }) => {
   let clearedLog = false;
   let addedShareRoot: unknown;
   let savedPreferences: unknown;
+  let peerBrowseRequest: number | undefined;
+  let peerDownloadHash: string | undefined;
+  const peer = {
+    client_ecid: 42,
+    client_name: "Peer One",
+    ip: "192.0.2.42",
+    software: "aMule",
+    software_version: "3.0",
+    upload_state: "idle",
+    download_state: "downloading",
+    upload_file_name: "",
+    upload_speed_bps: 0,
+    download_speed_bps: 10,
+  };
   await page.route("**/api/v0/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -74,10 +88,25 @@ test("covers core session and mutation workflows", async ({ page }) => {
       await json({ ok: true, search_id: 7, query: body.query });
     } else if (url.pathname.endsWith("/search")) {
       await json({ searches });
+    } else if (url.pathname.endsWith("/search/results/peer-file/download")) {
+      peerDownloadHash = "peer-file";
+      await json({ ok: true });
     } else if (url.pathname.endsWith("/search/results")) {
+      const peerBrowse = url.searchParams.get("search_id") === "9";
       await json({
-        search_id: 7,
-        results: [],
+        search_id: peerBrowse ? 9 : 7,
+        results: peerBrowse
+          ? [
+              {
+                hash: "peer-file",
+                name: "peer-file.iso",
+                size: 1024,
+                already_have: false,
+                sources: { total: 1, complete: 1 },
+                children: [],
+              },
+            ]
+          : [],
         progress: { state: "finished", kind: "global", percent: 100 },
       });
     } else if (url.pathname.endsWith("/search/stop") && request.method() === "POST") {
@@ -134,8 +163,13 @@ test("covers core session and mutation workflows", async ({ page }) => {
       await json({ general: { nickname: "Test node" } });
     } else if (url.pathname.endsWith("/auth/passwords")) {
       await json({ admin_set: true, guest_enabled: false });
+    } else if (url.pathname.endsWith("/clients/42/shared_files")) {
+      peerBrowseRequest = 42;
+      await json({ ok: true, search_id: 9 });
+    } else if (url.pathname.endsWith("/clients/42")) {
+      await json(peer);
     } else if (url.pathname.endsWith("/clients")) {
-      await json({ clients: [] });
+      await json({ clients: [peer] });
     } else if (url.pathname.endsWith("/categories") && request.method() === "POST") {
       createdCategory = request.postDataJSON();
       await json({ index: 1, name: "Images" });
@@ -231,6 +265,13 @@ test("covers core session and mutation workflows", async ({ page }) => {
   await page.getByLabel("Nickname").fill("Updated node");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect.poll(() => savedPreferences).toEqual({ general: { nickname: "Updated node" } });
+
+  await page.locator("nav").getByRole("button", { name: "Peers" }).click();
+  await page.getByRole("button", { name: "Details for Peer One" }).click();
+  await page.getByRole("button", { name: "Browse shared files" }).click();
+  await expect.poll(() => peerBrowseRequest).toBe(42);
+  await page.getByRole("button", { name: "Download file" }).click();
+  await expect.poll(() => peerDownloadHash).toBe("peer-file");
 
   expireNextStatus = true;
   await page.reload();
