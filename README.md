@@ -47,8 +47,13 @@ For LAN access, follow the aMule project's network/security guidance and restric
 
 ```bash
 pnpm exec prettier --write . --ignore-unknown
+pnpm format:check
 pnpm test
 pnpm build
 ```
 
 `PLAN.md` is a local implementation log and is intentionally not tracked in Git.
+
+## Continuous integration
+
+GitHub Actions runs formatting validation, tests, and the production build for pull requests and supported branches. It intentionally does not deploy anything; CD will be added separately.

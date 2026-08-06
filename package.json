@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "format:check": "prettier --check . --ignore-unknown",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview"
   },
+  "packageManager": "pnpm@11.9.0",
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.23",
     "@radix-ui/react-dialog": "^1.1.15",
