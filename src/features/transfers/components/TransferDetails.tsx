@@ -1,11 +1,14 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
 import { formatMebibytes } from "@/shared/lib/formatters";
+import { getErrorMessage } from "@/shared/lib/errors";
 
 export function TransferDetails({ hash, name }: { hash: string; name: string }) {
+  const client = useQueryClient();
   const detail = useQuery({
     queryKey: queryKeys.download(hash),
     queryFn: () => api.downloadDetail(hash),
@@ -21,6 +24,24 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
   const a4af = useQuery({
     queryKey: queryKeys.downloadA4af(hash),
     queryFn: () => api.downloadA4af(hash),
+  });
+  const rename = useMutation({
+    mutationFn: (nextName: string) => api.renameDownload(hash, nextName),
+    onSuccess: () => {
+      toast.success("Download name updated.");
+      void client.invalidateQueries({ queryKey: queryKeys.downloads });
+      void client.invalidateQueries({ queryKey: queryKeys.download(hash) });
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+  const swap = useMutation({
+    mutationFn: (action: "swap_this" | "swap_this_auto" | "swap_others") =>
+      api.a4afAction(hash, action),
+    onSuccess: () => {
+      toast.success("A4AF source swapping updated.");
+      void client.invalidateQueries({ queryKey: queryKeys.downloadA4af(hash) });
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const data = detail.data;
   return (
@@ -48,7 +69,16 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
               <ul>
                 {names.data?.filenames.map((item) => (
                   <li key={item.name}>
-                    {item.name} <small>({item.count})</small>
+                    <span>
+                      {item.name} <small>({item.count})</small>
+                    </span>
+                    <button
+                      className="muted detail-action"
+                      disabled={rename.isPending || item.name === data.name}
+                      onClick={() => rename.mutate(item.name)}
+                    >
+                      Use name
+                    </button>
                   </li>
                 )) ?? <li>None reported.</li>}
               </ul>
@@ -67,7 +97,36 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
                 )}
               </ul>
               <h3>A4AF sources</h3>
-              <p>{a4af.data?.a4af?.length ?? 0} asked-for-another-file source(s).</p>
+              <p>
+                {a4af.data?.sources.length ?? 0} asked-for-another-file source(s). Automatic
+                swapping is {a4af.data?.a4af_auto ? "on" : "off"}.
+              </p>
+              <div className="detail-actions">
+                <button
+                  className="muted"
+                  disabled={swap.isPending}
+                  onClick={() => swap.mutate("swap_this")}
+                >
+                  Take sources
+                </button>
+                <button
+                  className="muted"
+                  disabled={swap.isPending}
+                  onClick={() => swap.mutate("swap_others")}
+                >
+                  Release sources
+                </button>
+                <button
+                  className="muted"
+                  disabled={swap.isPending}
+                  onClick={() => swap.mutate("swap_this_auto")}
+                >
+                  Toggle automatic
+                </button>
+              </div>
+              {a4af.data?.sources.length ? (
+                <p className="detail-source-list">Peer IDs: {a4af.data.sources.join(", ")}</p>
+              ) : null}
             </>
           )}
         </Dialog.Content>

@@ -187,3 +187,18 @@ describe("log mutations", () => {
     await expect(api.clearAmuleLog()).resolves.toEqual({});
   });
 });
+
+describe("transfer detail mutations", () => {
+  it("uses the documented A4AF source envelope", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ a4af_auto: true, sources: [12, 34] }), {
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+
+    await expect(api.downloadA4af("hash")).resolves.toEqual({ a4af_auto: true, sources: [12, 34] });
+  });
+});

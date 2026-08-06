@@ -536,7 +536,16 @@ export const api = {
   downloadA4af: (hash: string) =>
     request(
       `/downloads/${hash}/a4af`,
-      z.object({ a4af: z.array(z.unknown()).optional() }).passthrough(),
+      z.object({ a4af_auto: z.boolean(), sources: z.array(z.number()) }),
+    ),
+  a4afAction: (hash: string, action: "swap_this" | "swap_this_auto" | "swap_others") =>
+    request(
+      `/downloads/${hash}/a4af`,
+      z.object({ a4af_auto: z.boolean(), sources: z.array(z.number()) }),
+      {
+        method: "POST",
+        body: JSON.stringify({ action }),
+      },
     ),
   addLinks: (links: string[]) =>
     request(
@@ -552,6 +561,11 @@ export const api = {
       body: JSON.stringify({
         status: action === "pause" ? "paused" : "resumed",
       }),
+    }),
+  renameDownload: (hash: string, name: string) =>
+    request(`/downloads/${hash}`, downloadSchema, {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
     }),
   removeDownload: (hash: string) =>
     request(`/downloads/${hash}`, z.object({ ok: z.literal(true) }).passthrough(), {

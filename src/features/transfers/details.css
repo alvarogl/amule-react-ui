@@ -36,6 +36,27 @@
   padding-left: 18px;
   line-height: 1.5;
 }
+.drawer li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.detail-action,
+.detail-actions .muted {
+  padding: 5px 7px;
+  font-size: 11px;
+}
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.detail-source-list {
+  color: #91a4b8;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
 .drawer-close {
   position: absolute;
   right: 16px;
