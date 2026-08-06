@@ -28,7 +28,6 @@ import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { formatMebibytes, formatRate } from "@/shared/lib/formatters";
 import { useSortState } from "@/shared/hooks/use-sort-state";
 import { getErrorMessage } from "@/shared/lib/errors";
-import { ThemeSelect } from "@/shared/components/ThemeSelect";
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
 
@@ -559,7 +558,6 @@ export function DashboardPage() {
           <span className={`id-status ${idState}`}>
             {idState === "high" ? "HighID" : idState === "low" ? "LowID" : "ID unknown"}
           </span>
-          <ThemeSelect />
           <button className="icon" onClick={() => void logout()}>
             <LogOut size={16} />
           </button>
