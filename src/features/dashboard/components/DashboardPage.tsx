@@ -37,6 +37,7 @@ import { SharedFilesView } from "@/features/shared/components/SharedFilesView";
 import { KadView } from "@/features/kad/components/KadView";
 import { LogsView } from "@/features/logs/components/LogsView";
 import { StatisticsView } from "@/features/statistics/components/StatisticsView";
+import { PreferencesView } from "@/features/preferences/components/PreferencesView";
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
 
@@ -512,7 +513,15 @@ function Uploads() {
 export function DashboardPage() {
   const { logout } = useSession();
   const [view, setView] = useState<
-    "dashboard" | "search" | "servers" | "categories" | "shared" | "kad" | "logs" | "statistics"
+    | "dashboard"
+    | "search"
+    | "servers"
+    | "categories"
+    | "shared"
+    | "kad"
+    | "logs"
+    | "statistics"
+    | "preferences"
   >("dashboard");
   const status = useQuery({ queryKey: queryKeys.status, queryFn: api.status });
   const downloads = useQuery({
@@ -558,6 +567,8 @@ export function DashboardPage() {
       <LogsView />
     ) : view === "statistics" ? (
       <StatisticsView />
+    ) : view === "preferences" ? (
+      <PreferencesView />
     ) : (
       <div className="content">
         <h1>Dashboard</h1>
@@ -603,7 +614,10 @@ export function DashboardPage() {
             {label}
           </button>
         ))}
-        <button disabled>
+        <button
+          className={view === "preferences" ? "active" : ""}
+          onClick={() => setView("preferences")}
+        >
           <Settings size={17} aria-hidden="true" />
           Preferences
         </button>

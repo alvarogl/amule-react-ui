@@ -205,6 +205,11 @@ export const statisticsGraphSchema = z.object({
     kad_bytes: z.number(),
   }),
 });
+export const preferencesSchema = z.record(z.string(), z.unknown());
+export const passwordStatusSchema = z.object({
+  admin_set: z.boolean(),
+  guest_enabled: z.boolean(),
+});
 const sharedDirectoryMutationSchema = z
   .object({
     ok: z.literal(true),
@@ -375,6 +380,23 @@ export const api = {
   statisticsTree: () => request("/stats/tree", statisticsTreeSchema),
   statisticsGraph: (graph: "download" | "upload" | "connections" | "kad", width = 300) =>
     request(`/stats/graphs/${graph}?width=${width}`, statisticsGraphSchema),
+  preferences: () => request("/preferences", preferencesSchema),
+  patchPreferences: (patch: Record<string, unknown>) =>
+    request("/preferences", preferencesSchema, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
+  passwordStatus: () => request("/auth/passwords", passwordStatusSchema),
+  patchPasswords: (patch: {
+    current_password: string;
+    admin_password?: string;
+    guest_password?: string;
+    guest_enabled?: boolean;
+  }) =>
+    request("/auth/passwords", passwordStatusSchema.passthrough(), {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
   reloadSharedFiles: () =>
     request("/shared/reload", z.object({ ok: z.literal(true) }).passthrough(), { method: "POST" }),
   patchSharedFile: (

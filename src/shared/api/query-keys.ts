@@ -14,6 +14,8 @@ export const queryKeys = {
   serverInfoLog: (tail: number) => ["logs", "serverinfo", tail] as const,
   statisticsTree: ["statistics", "tree"] as const,
   statisticsGraph: (graph: string, width: number) => ["statistics", "graph", graph, width] as const,
+  preferences: ["preferences"] as const,
+  passwordStatus: ["auth", "password-status"] as const,
   searches: ["searches"] as const,
   searchResults: (searchId: number | undefined) => ["search-results", searchId] as const,
   download: (hash: string) => ["download", hash] as const,
