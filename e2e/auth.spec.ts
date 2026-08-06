@@ -1,8 +1,22 @@
 import { expect, test } from "@playwright/test";
 
-test("signs in through the cookie-session flow without storing credentials", async ({ page }) => {
+test("protects the session and confirms destructive transfer deletion", async ({ page }) => {
   let authenticated = false;
   let expireNextStatus = false;
+  const download = {
+    hash: "0123456789abcdef0123456789abcdef",
+    name: "example.iso",
+    size: 1_024,
+    size_done: 512,
+    progress: { percent: 50 },
+    status: "downloading",
+    speed_bps: 100,
+    category: 0,
+    priority: "normal",
+    priority_auto: false,
+  };
+  let downloads = [download];
+  let deletedHash: string | undefined;
   await page.route("**/api/v0/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -37,8 +51,15 @@ test("signs in through the cookie-session flow without storing credentials", asy
         speeds: { download_bps: 0, upload_bps: 0 },
         queue: { upload_queue_length: 0, total_source_count: 0 },
       });
+    } else if (
+      url.pathname === `/api/v0/downloads/${download.hash}` &&
+      request.method() === "DELETE"
+    ) {
+      deletedHash = download.hash;
+      downloads = [];
+      await json({ ok: true });
     } else if (url.pathname.endsWith("/downloads")) {
-      await json({ downloads: [] });
+      await json({ downloads });
     } else if (url.pathname.endsWith("/clients")) {
       await json({ clients: [] });
     } else if (url.pathname.endsWith("/categories")) {
@@ -70,6 +91,12 @@ test("signs in through the cookie-session flow without storing credentials", asy
   await expect(page.getByText("Test server")).toBeVisible();
   await expect(page.evaluate(() => localStorage.length)).resolves.toBe(0);
   await expect(page.evaluate(() => sessionStorage.length)).resolves.toBe(0);
+
+  await page.getByRole("button", { name: "Delete example.iso" }).click();
+  await expect(page.getByRole("heading", { name: "Delete download?" })).toBeVisible();
+  await page.getByRole("button", { name: "Delete download", exact: true }).click();
+  await expect.poll(() => deletedHash).toBe(download.hash);
+  await expect.poll(async () => page.locator(".transfer-table tbody tr").count()).toBe(0);
 
   expireNextStatus = true;
   await page.reload();
