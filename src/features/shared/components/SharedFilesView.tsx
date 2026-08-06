@@ -1,7 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Info, RefreshCw, ShieldCheck, X } from "lucide-react";
+import { FolderPlus, Info, RefreshCw, ShieldCheck, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { api, type SharedFile } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
@@ -149,8 +149,16 @@ export function SharedFilesView() {
     queryFn: api.sharedFiles,
     refetchInterval: 10_000,
   });
+  const [directoryPath, setDirectoryPath] = useState("");
+  const [recursive, setRecursive] = useState(true);
+  const directories = useQuery({
+    queryKey: queryKeys.sharedDirectories,
+    queryFn: api.sharedDirectories,
+  });
   const client = useQueryClient();
   const refresh = () => void client.invalidateQueries({ queryKey: queryKeys.sharedFiles });
+  const refreshDirectories = () =>
+    void client.invalidateQueries({ queryKey: queryKeys.sharedDirectories });
   const reload = useMutation({
     mutationFn: api.reloadSharedFiles,
     onSuccess: () => {
@@ -176,6 +184,44 @@ export function SharedFilesView() {
       toast.success("Local-data verification scheduled. Check the aMule log for the result."),
     onError: (error) => toast.error(getErrorMessage(error)),
   });
+  const addDirectory = useMutation({
+    mutationFn: () => api.addSharedDirectory(directoryPath.trim(), recursive),
+    onSuccess: (result) => {
+      const rejected = result.rejected ?? [];
+      if (rejected.length) {
+        toast.error(
+          `Share root was rejected: ${rejected.map((entry) => entry.reason).join(", ")}.`,
+        );
+        return;
+      }
+      setDirectoryPath("");
+      toast.success("Share root saved.");
+      refreshDirectories();
+      refresh();
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+  const removeDirectory = useMutation({
+    mutationFn: api.removeSharedDirectory,
+    onSuccess: (result) => {
+      const rejected = result.rejected ?? [];
+      if (rejected.length) {
+        toast.error(
+          `Share root was rejected: ${rejected.map((entry) => entry.reason).join(", ")}.`,
+        );
+        return;
+      }
+      toast.success("Share root removed.");
+      refreshDirectories();
+      refresh();
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+  function submitDirectory(event: FormEvent) {
+    event.preventDefault();
+    if (!directoryPath.trim()) return toast.warning("A directory path is required.");
+    addDirectory.mutate();
+  }
   const rows = [...(shared.data?.shared ?? [])].sort((left, right) => {
     const value = (file: SharedFile) =>
       sort === "sources"
@@ -202,6 +248,65 @@ export function SharedFilesView() {
           <RefreshCw size={15} /> Reload library
         </button>
       </div>
+      <section className="panel share-roots">
+        <div className="panel-title">
+          <h2>Share roots</h2>
+          <span>{directories.data?.directories.length ?? 0} folders</span>
+        </div>
+        <form className="share-root-form" onSubmit={submitDirectory}>
+          <input
+            aria-label="Directory path"
+            placeholder="Directory path"
+            value={directoryPath}
+            onChange={(event) => setDirectoryPath(event.target.value)}
+          />
+          <label>
+            <input
+              type="checkbox"
+              checked={recursive}
+              onChange={(event) => setRecursive(event.target.checked)}
+            />
+            Include subfolders
+          </label>
+          <button disabled={addDirectory.isPending}>
+            <FolderPlus size={15} /> Add folder
+          </button>
+        </form>
+        {directories.isPending || directories.isError ? (
+          <QueryNotice
+            loading={directories.isPending}
+            error={directories.error}
+            onRetry={() => void directories.refetch()}
+          />
+        ) : directories.data?.directories.length ? (
+          <ul className="share-root-list">
+            {directories.data.directories.map((directory) => (
+              <li key={directory.path}>
+                <span title={directory.path}>{directory.path}</span>
+                <small>{directory.recursive ? "Including subfolders" : "This folder only"}</small>
+                <ConfirmDialog
+                  trigger={
+                    <button
+                      className="icon danger"
+                      aria-label={`Remove ${directory.path}`}
+                      title="Remove folder"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  }
+                  title="Remove share root?"
+                  description={`Stop sharing “${directory.path}”? Files are not deleted.`}
+                  actionLabel="Remove folder"
+                  dangerous
+                  onConfirm={() => removeDirectory.mutate(directory.path)}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="empty">No share roots configured.</p>
+        )}
+      </section>
       <section className="panel">
         <div className="panel-title">
           <h2>Shared library</h2>

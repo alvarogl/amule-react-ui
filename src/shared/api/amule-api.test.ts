@@ -4,6 +4,7 @@ import {
   api,
   downloadsSchema,
   searchResultsSchema,
+  sharedDirectoriesSchema,
   sharedFilesSchema,
   statusSchema,
 } from "./amule-api";
@@ -65,6 +66,12 @@ describe("aMule schemas", () => {
         ],
       }).shared,
     ).toHaveLength(1));
+  it("accepts share roots with their recursion setting", () =>
+    expect(
+      sharedDirectoriesSchema.parse({
+        directories: [{ path: "/media", recursive: true }],
+      }).directories[0],
+    ).toEqual({ path: "/media", recursive: true }));
 });
 
 describe("api authentication", () => {

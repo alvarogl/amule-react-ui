@@ -129,6 +129,15 @@ export const sharedFileSchema = z
   })
   .passthrough();
 export const sharedFilesSchema = z.object({ shared: z.array(sharedFileSchema) }).passthrough();
+export const sharedDirectoriesSchema = z.object({
+  directories: z.array(z.object({ path: z.string(), recursive: z.boolean() })),
+});
+const sharedDirectoryMutationSchema = z
+  .object({
+    ok: z.literal(true),
+    rejected: z.array(z.object({ path: z.string(), reason: z.string() })).default([]),
+  })
+  .passthrough();
 export const clientsSchema = z.object({
   clients: z.array(
     z
@@ -262,6 +271,16 @@ export const api = {
   categories: () => request("/categories", categoriesSchema),
   sharedFiles: () => request("/shared", sharedFilesSchema),
   sharedFile: (hash: string) => request(`/shared/${hash}`, sharedFileSchema),
+  sharedDirectories: () => request("/shared/directories", sharedDirectoriesSchema),
+  addSharedDirectory: (path: string, recursive: boolean) =>
+    request("/shared/directories", sharedDirectoryMutationSchema, {
+      method: "POST",
+      body: JSON.stringify({ path, recursive }),
+    }),
+  removeSharedDirectory: (path: string) =>
+    request(`/shared/directories?path=${encodeURIComponent(path)}`, sharedDirectoryMutationSchema, {
+      method: "DELETE",
+    }),
   reloadSharedFiles: () =>
     request("/shared/reload", z.object({ ok: z.literal(true) }).passthrough(), { method: "POST" }),
   patchSharedFile: (

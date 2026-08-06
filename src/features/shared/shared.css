@@ -16,6 +16,61 @@
   align-items: center;
   gap: 7px;
 }
+.share-roots {
+  margin-bottom: 16px;
+}
+.share-root-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid #26394d;
+}
+.share-root-form > input {
+  min-width: 0;
+  flex: 1;
+}
+.share-root-form label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #9db0c4;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.share-root-form label input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+.share-root-form button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.share-root-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.share-root-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 18px;
+  border-bottom: 1px solid #1e3041;
+}
+.share-root-list span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.share-root-list small {
+  color: #91a4b8;
+}
 .shared-priority {
   width: 100%;
   min-width: 0;
@@ -72,5 +127,21 @@
   }
   .shared-metadata-form .shared-comment + button {
     grid-column: auto;
+  }
+  .share-root-form {
+    flex-wrap: wrap;
+  }
+  .share-root-form > input {
+    flex-basis: 100%;
+  }
+  .share-root-list li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .share-root-list small {
+    grid-column: 1;
+  }
+  .share-root-list .icon {
+    grid-column: 2;
+    grid-row: 1 / span 2;
   }
 }
