@@ -97,9 +97,11 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
                 )}
               </ul>
               <h3>A4AF sources</h3>
-              <p>
-                {a4af.data?.sources.length ?? 0} asked-for-another-file source(s). Automatic
-                swapping is {a4af.data?.a4af_auto ? "on" : "off"}.
+              <p className="detail-a4af-status">
+                {a4af.data?.sources.length
+                  ? `${a4af.data.sources.length} source${a4af.data.sources.length === 1 ? "" : "s"}`
+                  : "No sources"}
+                <span>Auto {a4af.data?.a4af_auto ? "on" : "off"}</span>
               </p>
               <div className="detail-actions">
                 <button
@@ -125,7 +127,11 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
                 </button>
               </div>
               {a4af.data?.sources.length ? (
-                <p className="detail-source-list">Peer IDs: {a4af.data.sources.join(", ")}</p>
+                <div className="detail-source-list">
+                  {a4af.data.sources.map((source) => (
+                    <span key={source}>#{source}</span>
+                  ))}
+                </div>
               ) : null}
             </>
           )}
