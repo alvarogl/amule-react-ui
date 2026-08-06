@@ -1,0 +1,43 @@
+.detail-link {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0;
+  background: none;
+  color: #7bdbff;
+  font: inherit;
+  text-align: left;
+}
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: #02060abb;
+}
+.drawer {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  width: min(460px, 94vw);
+  overflow: auto;
+  background: #121b26;
+  border-left: 1px solid #395066;
+  padding: 28px;
+  color: #d7e1ed;
+}
+.drawer h3 {
+  margin-top: 26px;
+  font-size: 14px;
+  color: #91a4b8;
+}
+.drawer ul {
+  padding-left: 18px;
+  line-height: 1.5;
+}
+.drawer-close {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+}

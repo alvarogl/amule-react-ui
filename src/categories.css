@@ -1,0 +1,14 @@
+.category-select {
+  width: 130px;
+  min-width: 130px;
+  max-width: 130px;
+  background: #0b1017;
+  color: #d7e1ed;
+  border: 1px solid #395066;
+  border-radius: 5px;
+  padding: 5px;
+}
+.category-input {
+  width: 100%;
+  padding: 7px;
+}

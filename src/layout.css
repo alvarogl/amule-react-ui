@@ -1,0 +1,10 @@
+.content {
+  width: 90vw;
+  max-width: none;
+}
+
+@media (max-width: 700px) {
+  .content {
+    width: auto;
+  }
+}
