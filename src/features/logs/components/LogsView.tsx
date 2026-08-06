@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eraser, ScrollText } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +16,8 @@ const maxTail = tailOptions[tailOptions.length - 1];
 export function LogsView() {
   const [kind, setKind] = useState<LogKind>("amule");
   const [tail, setTail] = useState<(typeof tailOptions)[number]>(100);
+  const [liveTail, setLiveTail] = useState(false);
+  const output = useRef<HTMLOListElement>(null);
   const client = useQueryClient();
   const amule = useQuery({
     queryKey: queryKeys.amuleLog(tail),
@@ -43,6 +45,10 @@ export function LogsView() {
     ?.filter(Boolean)
     .slice(-maxTail);
   const count = kind === "amule" ? amule.data?.total_cached : serverInfo.data?.returned_bytes;
+  useEffect(() => {
+    if (!liveTail || kind !== "amule") return;
+    output.current?.scrollTo({ top: output.current.scrollHeight, behavior: "smooth" });
+  }, [kind, lines?.length, liveTail]);
   return (
     <div className="content">
       <h1>Logs</h1>
@@ -86,6 +92,22 @@ export function LogsView() {
                 ))}
               </select>
             </label>
+            <label
+              className="log-live-tail"
+              title={
+                kind === "amule"
+                  ? "Scroll to the newest line whenever the aMule log receives an SSE update"
+                  : "Server-info logs are poll-only; live tail is unavailable"
+              }
+            >
+              <input
+                type="checkbox"
+                checked={liveTail}
+                disabled={kind !== "amule"}
+                onChange={(event) => setLiveTail(event.target.checked)}
+              />
+              Live tail
+            </label>
             <ConfirmDialog
               trigger={
                 <button className="icon danger" aria-label="Clear active log" title="Clear log">
@@ -107,13 +129,18 @@ export function LogsView() {
             onRetry={() => void active.refetch()}
           />
         ) : lines?.length ? (
-          <ol className="log-output" aria-live="polite">
+          <ol className="log-output" aria-live="polite" ref={output}>
+            <li className="log-column-header" aria-hidden="true">
+              <span>#</span>
+              <span>Timestamp</span>
+              <span>Message</span>
+            </li>
             {lines.map((line, index) => {
               const formatted = formatLogLine(line);
               return (
                 <li className={`log-line log-line--${formatted.tone}`} key={`${line}-${index}`}>
                   <span className="log-line-number">{index + 1}</span>
-                  {formatted.timestamp && <time>{formatted.timestamp}</time>}
+                  <time>{formatted.timestamp ?? "—"}</time>
                   <span>{formatted.message}</span>
                 </li>
               );
