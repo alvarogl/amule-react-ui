@@ -9,6 +9,8 @@ import {
   sharedDirectoriesSchema,
   sharedFilesSchema,
   statusSchema,
+  statisticsGraphSchema,
+  statisticsTreeSchema,
 } from "./amule-api";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -90,6 +92,35 @@ describe("aMule schemas", () => {
     expect(amuleLogSchema.parse({ lines: ["one"], total_cached: 2, returned: 1 }).lines).toEqual([
       "one",
     ]));
+  it("accepts typed statistics tree values and graph samples", () => {
+    expect(
+      statisticsTreeSchema.parse({
+        nodes: [
+          {
+            key: "upload_data",
+            label: "Total uploaded: %s",
+            values: [
+              {
+                type: "bytes",
+                value: 1024,
+                extra: { type: "bytes", value: 2048 },
+              },
+            ],
+            children: [],
+          },
+        ],
+      }).nodes,
+    ).toHaveLength(1);
+    expect(
+      statisticsGraphSchema.parse({
+        graph: "download",
+        unit: "bps",
+        interval_seconds: 1,
+        points: [{ t: "2026-01-01T00:00:00Z", t_unix: 1, value: 42 }],
+        session: { download_bytes: 1, upload_bytes: 2, kad_bytes: 3 },
+      }).points[0].value,
+    ).toBe(42);
+  });
 });
 
 describe("api authentication", () => {

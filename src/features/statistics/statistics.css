@@ -1,0 +1,102 @@
+.statistics-panel {
+  margin-top: 20px;
+}
+.statistics-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.statistics-controls button {
+  padding: 6px 9px;
+}
+.statistics-controls .active {
+  background: #193e55;
+  color: #7bdbff;
+}
+.statistics-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #91a4b8;
+  font-size: 12px;
+}
+.statistics-controls select {
+  border: 1px solid #395066;
+  border-radius: 5px;
+  padding: 4px;
+  background: #0b1017;
+  color: #d7e1ed;
+}
+.statistics-chart-wrap {
+  padding: 18px;
+}
+.statistics-chart-scale,
+.statistics-session {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #91a4b8;
+  font-size: 12px;
+}
+.statistics-chart-scale strong {
+  color: #d7e1ed;
+}
+.statistics-chart {
+  display: block;
+  width: 100%;
+  height: 220px;
+  margin-top: 10px;
+  overflow: visible;
+}
+.statistics-chart line {
+  stroke: #26394d;
+  stroke-width: 1;
+}
+.statistics-chart polyline {
+  fill: none;
+  stroke: #4dd2ff;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+.statistics-session {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  padding: 0 18px 18px;
+}
+.statistics-tree {
+  padding: 8px 0;
+}
+.statistics-node summary {
+  padding: 9px 18px;
+  color: #d7e1ed;
+  cursor: pointer;
+  font-weight: 700;
+}
+.statistics-node summary:hover,
+.statistics-leaf:hover {
+  background: #172535;
+}
+.statistics-children {
+  border-left: 1px solid #26394d;
+  margin-left: 18px;
+}
+.statistics-leaf {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  color: #b9cada;
+  overflow-wrap: anywhere;
+}
+.statistics-empty {
+  padding: 0 18px 18px;
+}
+@media (max-width: 700px) {
+  .statistics-panel .panel-title {
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .statistics-chart {
+    height: 170px;
+  }
+}

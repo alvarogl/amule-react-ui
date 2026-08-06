@@ -12,6 +12,8 @@ export const queryKeys = {
   amuleLog: (tail: number) => ["logs", "amule", tail] as const,
   serverInfoLogs: ["logs", "serverinfo"] as const,
   serverInfoLog: (tail: number) => ["logs", "serverinfo", tail] as const,
+  statisticsTree: ["statistics", "tree"] as const,
+  statisticsGraph: (graph: string, width: number) => ["statistics", "graph", graph, width] as const,
   searches: ["searches"] as const,
   searchResults: (searchId: number | undefined) => ["search-results", searchId] as const,
   download: (hash: string) => ["download", hash] as const,

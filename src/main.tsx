@@ -17,6 +17,7 @@ import "@/features/categories/categories.css";
 import "@/features/kad/kad.css";
 import "@/features/logs/logs.css";
 import "@/features/shared/shared.css";
+import "@/features/statistics/statistics.css";
 import "@/shared/styles/data-table.css";
 import "@/shared/styles/confirm-dialog.css";
 createRoot(document.getElementById("root")!).render(

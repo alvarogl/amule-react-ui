@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
+  ChartNoAxesCombined,
   Check,
   FolderTree,
   LayoutDashboard,
@@ -35,6 +36,7 @@ import { getErrorMessage } from "@/shared/lib/errors";
 import { SharedFilesView } from "@/features/shared/components/SharedFilesView";
 import { KadView } from "@/features/kad/components/KadView";
 import { LogsView } from "@/features/logs/components/LogsView";
+import { StatisticsView } from "@/features/statistics/components/StatisticsView";
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
 
@@ -510,7 +512,7 @@ function Uploads() {
 export function DashboardPage() {
   const { logout } = useSession();
   const [view, setView] = useState<
-    "dashboard" | "search" | "servers" | "categories" | "shared" | "kad" | "logs"
+    "dashboard" | "search" | "servers" | "categories" | "shared" | "kad" | "logs" | "statistics"
   >("dashboard");
   const status = useQuery({ queryKey: queryKeys.status, queryFn: api.status });
   const downloads = useQuery({
@@ -537,6 +539,7 @@ export function DashboardPage() {
     { id: "shared" as const, label: "Shared", icon: Share2 },
     { id: "kad" as const, label: "Kad", icon: Network },
     { id: "logs" as const, label: "Logs", icon: ScrollText },
+    { id: "statistics" as const, label: "Statistics", icon: ChartNoAxesCombined },
   ];
   const body =
     view === "search" ? (
@@ -553,6 +556,8 @@ export function DashboardPage() {
       <KadView />
     ) : view === "logs" ? (
       <LogsView />
+    ) : view === "statistics" ? (
+      <StatisticsView />
     ) : (
       <div className="content">
         <h1>Dashboard</h1>

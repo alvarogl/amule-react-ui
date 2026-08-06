@@ -157,6 +157,54 @@ export const serverInfoLogSchema = z.object({
   total_bytes: z.number(),
   returned_bytes: z.number(),
 });
+export type StatisticValue = {
+  type: "integer" | "istring" | "ishort" | "bytes" | "speed" | "time" | "double" | "string";
+  value: number | string;
+  enum?: "never" | "not_available";
+  extra?: StatisticValue;
+};
+const statisticValueSchema: z.ZodType<StatisticValue> = z.lazy(() =>
+  z
+    .object({
+      type: z.enum(["integer", "istring", "ishort", "bytes", "speed", "time", "double", "string"]),
+      value: z.union([z.number(), z.string()]),
+      enum: z.enum(["never", "not_available"]).optional(),
+      extra: statisticValueSchema.optional(),
+    })
+    .passthrough(),
+);
+export type StatisticNode = {
+  key?: string;
+  raw?: string;
+  label: string;
+  values: StatisticValue[];
+  children: StatisticNode[];
+  ratio?: { session?: number; total?: number };
+};
+const statisticNodeSchema: z.ZodType<StatisticNode> = z.lazy(() =>
+  z
+    .object({
+      key: z.string().optional(),
+      raw: z.string().optional(),
+      label: z.string(),
+      values: z.array(statisticValueSchema),
+      children: z.array(statisticNodeSchema),
+      ratio: z.object({ session: z.number().optional(), total: z.number().optional() }).optional(),
+    })
+    .passthrough(),
+);
+export const statisticsTreeSchema = z.object({ nodes: z.array(statisticNodeSchema) });
+export const statisticsGraphSchema = z.object({
+  graph: z.enum(["download", "upload", "connections", "kad"]),
+  unit: z.enum(["bps", "count"]),
+  interval_seconds: z.number(),
+  points: z.array(z.object({ t: z.string(), t_unix: z.number(), value: z.number() })),
+  session: z.object({
+    download_bytes: z.number(),
+    upload_bytes: z.number(),
+    kad_bytes: z.number(),
+  }),
+});
 const sharedDirectoryMutationSchema = z
   .object({
     ok: z.literal(true),
@@ -324,6 +372,9 @@ export const api = {
     request("/logs/serverinfo", z.unknown(), {
       method: "DELETE",
     }),
+  statisticsTree: () => request("/stats/tree", statisticsTreeSchema),
+  statisticsGraph: (graph: "download" | "upload" | "connections" | "kad", width = 300) =>
+    request(`/stats/graphs/${graph}?width=${width}`, statisticsGraphSchema),
   reloadSharedFiles: () =>
     request("/shared/reload", z.object({ ok: z.literal(true) }).passthrough(), { method: "POST" }),
   patchSharedFile: (
