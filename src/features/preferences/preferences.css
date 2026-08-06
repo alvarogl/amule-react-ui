@@ -73,9 +73,16 @@
   font-size: 11px;
 }
 .preference-field input,
-.preference-field textarea {
+.preference-field textarea,
+.preference-field select {
   width: 100%;
   padding: 8px;
+}
+.preference-field select {
+  border: 1px solid #395066;
+  border-radius: 7px;
+  background: #0b1017;
+  color: #fff;
 }
 .preference-field textarea {
   min-height: 70px;
@@ -120,6 +127,27 @@
   color: #91a4b8;
   font-size: 13px;
   line-height: 1.5;
+}
+.preference-validation {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px solid #9b3d4b;
+  border-radius: 7px;
+  color: #ffb2ba;
+  background: #2b1820;
+}
+.preference-secret-group {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid #26394d;
+}
+.preference-secret-group h3 {
+  margin: 0;
+  color: #91a4b8;
+  font-size: 13px;
 }
 @media (max-width: 850px) {
   .preference-grid {

@@ -6,6 +6,11 @@ import { api } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
 import { QueryNotice } from "@/shared/components/QueryNotice";
 import { getErrorMessage } from "@/shared/lib/errors";
+import {
+  enumValues,
+  numberLimits,
+  validatePreferences,
+} from "@/features/preferences/preferences-validation";
 
 type Preferences = Record<string, unknown>;
 
@@ -124,7 +129,8 @@ function PreferenceField({
         {readOnly && <em>Read only</em>}
       </label>
     );
-  if (typeof value === "number")
+  if (typeof value === "number") {
+    const limits = numberLimits(path);
     return (
       <label className="preference-field" htmlFor={id}>
         <span>{labelFor(fieldKey)}</span>
@@ -132,11 +138,15 @@ function PreferenceField({
           id={id}
           type="number"
           value={value}
+          min={limits.min}
+          max={limits.max}
+          step="1"
           readOnly={readOnly}
           onChange={(event) => onChange(Number(event.target.value))}
         />
       </label>
     );
+  }
   if (Array.isArray(value))
     return (
       <label className="preference-field" htmlFor={id}>
@@ -149,6 +159,25 @@ function PreferenceField({
           readOnly={readOnly}
           onChange={(event) => onChange(event.target.value.split("\n").filter(Boolean))}
         />
+      </label>
+    );
+  const options = enumValues(path);
+  if (options)
+    return (
+      <label className="preference-field" htmlFor={id}>
+        <span>{labelFor(fieldKey)}</span>
+        <select
+          id={id}
+          value={String(value ?? "")}
+          disabled={readOnly}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option || "Disabled"}
+            </option>
+          ))}
+        </select>
       </label>
     );
   return (
@@ -322,6 +351,101 @@ function PasswordManager() {
   );
 }
 
+function DaemonSecretManager() {
+  const [webPassword, setWebPassword] = useState("");
+  const [webGuestPassword, setWebGuestPassword] = useState("");
+  const [proxyPassword, setProxyPassword] = useState("");
+  const client = useQueryClient();
+  const saveWebCredentials = useMutation({
+    mutationFn: () =>
+      api.patchPreferences({
+        remote_controls: {
+          webserver: {
+            ...(webPassword ? { password: webPassword } : {}),
+            ...(webGuestPassword ? { guest_password: webGuestPassword } : {}),
+          },
+        },
+      }),
+    onSuccess: () => {
+      setWebPassword("");
+      setWebGuestPassword("");
+      void client.invalidateQueries({ queryKey: queryKeys.preferences });
+      toast.success("Legacy web credentials updated.");
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+  const saveProxyPassword = useMutation({
+    mutationFn: () => api.patchPreferences({ connection: { proxy_password: proxyPassword } }),
+    onSuccess: () => {
+      setProxyPassword("");
+      void client.invalidateQueries({ queryKey: queryKeys.preferences });
+      toast.success("Proxy password updated.");
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+  return (
+    <section className="panel preference-group password-manager">
+      <div className="panel-title">
+        <h2>
+          <KeyRound size={17} /> Daemon credentials
+        </h2>
+        <span>Write-only</span>
+      </div>
+      <div className="preference-fields">
+        <p className="preference-help">
+          These values are sent only when saved, then cleared from this page. They can never be read
+          back.
+        </p>
+        <div className="preference-secret-group">
+          <h3>Legacy web server</h3>
+          <label className="preference-field">
+            <span>New admin password</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={webPassword}
+              onChange={(event) => setWebPassword(event.target.value)}
+            />
+          </label>
+          <label className="preference-field">
+            <span>New guest password</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={webGuestPassword}
+              onChange={(event) => setWebGuestPassword(event.target.value)}
+            />
+          </label>
+          <button
+            disabled={(!webPassword && !webGuestPassword) || saveWebCredentials.isPending}
+            onClick={() => saveWebCredentials.mutate()}
+          >
+            Save web credentials
+          </button>
+        </div>
+        <div className="preference-secret-group">
+          <h3>Daemon proxy</h3>
+          <label className="preference-field">
+            <span>New proxy password</span>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={proxyPassword}
+              onChange={(event) => setProxyPassword(event.target.value)}
+            />
+          </label>
+          <button
+            disabled={!proxyPassword || saveProxyPassword.isPending}
+            onClick={() => saveProxyPassword.mutate()}
+          >
+            Save proxy password
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function PreferencesView() {
   const client = useQueryClient();
   const preferences = useQuery({ queryKey: queryKeys.preferences, queryFn: api.preferences });
@@ -339,6 +463,10 @@ export function PreferencesView() {
     preferences.data && workingDraft
       ? changedPaths(preferences.data, workingDraft).some((path) => restartKeys.has(path))
       : false;
+  const validationErrors = useMemo(
+    () => (workingDraft ? validatePreferences(workingDraft) : []),
+    [workingDraft],
+  );
   const save = useMutation({
     mutationFn: () => api.patchPreferences(patch ?? {}),
     onSuccess: (result) => {
@@ -367,6 +495,11 @@ export function PreferencesView() {
           <ShieldAlert size={16} /> Some changes take effect after restarting aMule.
         </p>
       )}
+      {validationErrors.length > 0 && (
+        <p className="preference-validation" role="alert">
+          <ShieldAlert size={16} /> {validationErrors[0]}
+        </p>
+      )}
       <div className="preference-toolbar">
         <span>{patch ? "Unsaved changes" : "No unsaved changes"}</span>
         <label className="preference-advanced-toggle">
@@ -384,7 +517,10 @@ export function PreferencesView() {
         >
           <RotateCcw size={15} /> Discard
         </button>
-        <button disabled={!patch || save.isPending} onClick={() => save.mutate()}>
+        <button
+          disabled={!patch || save.isPending || validationErrors.length > 0}
+          onClick={() => save.mutate()}
+        >
           <Save size={15} /> Save changes
         </button>
       </div>
@@ -409,6 +545,7 @@ export function PreferencesView() {
               />
             ))}
           {advanced && <PasswordManager />}
+          {advanced && <DaemonSecretManager />}
         </div>
       ) : null}
     </div>
