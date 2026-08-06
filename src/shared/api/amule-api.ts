@@ -132,6 +132,21 @@ export const sharedFilesSchema = z.object({ shared: z.array(sharedFileSchema) })
 export const sharedDirectoriesSchema = z.object({
   directories: z.array(z.object({ path: z.string(), recursive: z.boolean() })),
 });
+export const kadSchema = z.object({
+  state: z.string(),
+  firewalled: z.boolean(),
+  firewalled_udp: z.boolean(),
+  in_lan_mode: z.boolean(),
+  ip: z.string(),
+  network: z.object({ users: z.number(), files: z.number(), nodes: z.number() }),
+  indexed: z.object({
+    sources: z.number(),
+    keywords: z.number(),
+    notes: z.number(),
+    load: z.number(),
+  }),
+  buddy: z.object({ status: z.string(), ip: z.string(), port: z.number() }).optional(),
+});
 const sharedDirectoryMutationSchema = z
   .object({
     ok: z.literal(true),
@@ -280,6 +295,17 @@ export const api = {
   removeSharedDirectory: (path: string) =>
     request(`/shared/directories?path=${encodeURIComponent(path)}`, sharedDirectoryMutationSchema, {
       method: "DELETE",
+    }),
+  kad: () => request("/kad", kadSchema),
+  bootstrapKad: (ip: string | number, port: number) =>
+    request("/kad/bootstrap", z.object({ ok: z.literal(true), ip: z.number(), port: z.number() }), {
+      method: "POST",
+      body: JSON.stringify({ ip, port }),
+    }),
+  updateKadNodes: (nodes_url: string) =>
+    request("/kad/update", z.object({ ok: z.literal(true), nodes_url: z.string() }), {
+      method: "POST",
+      body: JSON.stringify({ nodes_url }),
     }),
   reloadSharedFiles: () =>
     request("/shared/reload", z.object({ ok: z.literal(true) }).passthrough(), { method: "POST" }),

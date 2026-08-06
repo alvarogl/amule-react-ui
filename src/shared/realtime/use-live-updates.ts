@@ -12,6 +12,7 @@ const snapshots = [
   queryKeys.uploadClients,
   queryKeys.categories,
   queryKeys.sharedFiles,
+  queryKeys.kad,
   queryKeys.searches,
 ];
 export function useLiveUpdates() {
@@ -40,6 +41,7 @@ export function useLiveUpdates() {
       "shared_added",
       "shared_updated",
       "shared_removed",
+      "kad_state",
     ].forEach((type) =>
       stream.addEventListener(type, () => {
         refresh();

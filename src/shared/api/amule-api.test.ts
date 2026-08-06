@@ -3,6 +3,7 @@ import { unauthorizedEvent } from "@/shared/auth/unauthorized";
 import {
   api,
   downloadsSchema,
+  kadSchema,
   searchResultsSchema,
   sharedDirectoriesSchema,
   sharedFilesSchema,
@@ -72,6 +73,18 @@ describe("aMule schemas", () => {
         directories: [{ path: "/media", recursive: true }],
       }).directories[0],
     ).toEqual({ path: "/media", recursive: true }));
+  it("accepts the detailed Kad status contract", () =>
+    expect(
+      kadSchema.parse({
+        state: "connected",
+        firewalled: false,
+        firewalled_udp: false,
+        in_lan_mode: false,
+        ip: "203.0.113.5",
+        network: { users: 1, files: 2, nodes: 3 },
+        indexed: { sources: 4, keywords: 5, notes: 6, load: 7 },
+      }).network.nodes,
+    ).toBe(3));
 });
 
 describe("api authentication", () => {
