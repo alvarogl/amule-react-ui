@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("signs in through the cookie-session flow without storing credentials", async ({ page }) => {
   let authenticated = false;
+  let expireNextStatus = false;
   await page.route("**/api/v0/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -25,6 +26,10 @@ test("signs in through the cookie-session flow without storing credentials", asy
         expires_at_unix: 4_070_908_800,
       });
     } else if (url.pathname.endsWith("/status")) {
+      if (expireNextStatus) {
+        await json({ error: { code: "unauthorized", message: "Session expired" } }, 401);
+        return;
+      }
       await json({
         ec_connected: true,
         ed2k: { state: "connected", low_id: false, server_name: "Test server" },
@@ -65,4 +70,8 @@ test("signs in through the cookie-session flow without storing credentials", asy
   await expect(page.getByText("Test server")).toBeVisible();
   await expect(page.evaluate(() => localStorage.length)).resolves.toBe(0);
   await expect(page.evaluate(() => sessionStorage.length)).resolves.toBe(0);
+
+  expireNextStatus = true;
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "aMule Console" })).toBeVisible();
 });
