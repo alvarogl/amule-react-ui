@@ -100,6 +100,23 @@ scripts/install-static-ui.sh --static-root /absolute/path/to/static-root \
 It prints a rollback directory. Restore it with
 `scripts/install-static-ui.sh --rollback /path/to/rollback-directory`.
 
+### Create a release archive
+
+After a production build, create an operator-ready archive and SHA-256
+checksum with:
+
+```bash
+pnpm build
+scripts/create-release-archive.sh
+```
+
+The output in `release/` contains the static bundle, deployment helper,
+generic templates, documentation, and a release manifest. It deliberately
+excludes `.env`, credentials, runtime configuration, and dependencies. Verify
+the downloaded archive with `sha256sum --check release/*.sha256` before use.
+The project has no declared distribution license yet, so do not publish an
+archive publicly until a license is selected.
+
 ## Quality checks
 
 ```bash
@@ -108,6 +125,7 @@ pnpm format:check
 pnpm lint
 pnpm test
 pnpm test:deployment
+pnpm test:release
 pnpm build
 ```
 

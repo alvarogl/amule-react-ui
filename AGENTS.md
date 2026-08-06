@@ -19,6 +19,7 @@ pnpm format:check  # validate Prettier formatting
 pnpm lint          # run ESLint on source and configuration
 pnpm test          # run Vitest once
 pnpm test:deployment # exercise the isolated deployment install/rollback flow
+pnpm test:release    # validate deterministic release archive and checksum
 pnpm build         # type-check and build dist/
 ```
 

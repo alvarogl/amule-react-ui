@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:deployment": "bash scripts/test-install-static-ui.sh",
+    "test:release": "bash scripts/test-release-archive.sh",
     "preview": "vite preview"
   },
   "packageManager": "pnpm@11.9.0",

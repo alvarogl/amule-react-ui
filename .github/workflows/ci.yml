@@ -51,3 +51,6 @@ jobs:
 
       - name: Build production bundle
         run: pnpm build
+
+      - name: Test release package
+        run: pnpm test:release
