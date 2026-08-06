@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { lazy, Suspense, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -36,8 +36,13 @@ import { getErrorMessage } from "@/shared/lib/errors";
 import { SharedFilesView } from "@/features/shared/components/SharedFilesView";
 import { KadView } from "@/features/kad/components/KadView";
 import { LogsView } from "@/features/logs/components/LogsView";
-import { StatisticsView } from "@/features/statistics/components/StatisticsView";
 import { PreferencesView } from "@/features/preferences/components/PreferencesView";
+
+const StatisticsView = lazy(() =>
+  import("@/features/statistics/components/StatisticsView").then(({ StatisticsView }) => ({
+    default: StatisticsView,
+  })),
+);
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
 
@@ -566,7 +571,9 @@ export function DashboardPage() {
     ) : view === "logs" ? (
       <LogsView />
     ) : view === "statistics" ? (
-      <StatisticsView />
+      <Suspense fallback={<main className="loading">Loading statistics…</main>}>
+        <StatisticsView />
+      </Suspense>
     ) : view === "preferences" ? (
       <PreferencesView />
     ) : (

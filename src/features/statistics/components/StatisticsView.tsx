@@ -1,16 +1,27 @@
+import * as Accordion from "@radix-ui/react-accordion";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3 } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { BarChart3, ChevronRight } from "lucide-react";
 import { api, type StatisticNode, type StatisticValue } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
 import { QueryNotice } from "@/shared/components/QueryNotice";
 import { formatBytes, formatDuration, formatRate } from "@/shared/lib/formatters";
 
-type GraphName = "download" | "upload" | "connections" | "kad";
+type GraphName = "traffic" | "connections" | "kad";
+type SeriesName = Exclude<GraphName, "traffic"> | "download" | "upload";
 
 const graphLabels: Record<GraphName, string> = {
-  download: "Download",
-  upload: "Upload",
+  traffic: "Traffic",
   connections: "Connections",
   kad: "Kad",
 };
@@ -46,83 +57,198 @@ function formatStatisticLabel(node: StatisticNode) {
 
 function StatisticsTreeNode({ node, depth = 0 }: { node: StatisticNode; depth?: number }) {
   const label = formatStatisticLabel(node);
-  const isContainer = node.children.length > 0;
-  if (!isContainer)
-    return (
-      <div className="statistics-leaf" style={{ paddingLeft: `${16 + depth * 18}px` }}>
-        {label}
-      </div>
-    );
+  const key = node.key ?? `${node.label}-${depth}`;
+  if (!node.children.length) return <div className="statistics-leaf">{label}</div>;
 
   return (
-    <details className="statistics-node" open={depth < 2}>
-      <summary>{label}</summary>
-      <div className="statistics-children">
-        {node.children.map((child, index) => (
-          <StatisticsTreeNode
-            key={`${child.key ?? child.label}-${index}`}
-            node={child}
-            depth={depth + 1}
-          />
-        ))}
-      </div>
-    </details>
+    <Accordion.Item className="statistics-node" value={key}>
+      <Accordion.Header>
+        <Accordion.Trigger className="statistics-trigger">
+          <ChevronRight size={15} aria-hidden="true" />
+          {label}
+        </Accordion.Trigger>
+      </Accordion.Header>
+      <Accordion.Content className="statistics-accordion-content">
+        <Accordion.Root
+          className="statistics-children"
+          type="multiple"
+          defaultValue={
+            depth < 1
+              ? node.children.map((child, index) => child.key ?? `${child.label}-${index}`)
+              : []
+          }
+        >
+          {node.children.map((child, index) => (
+            <StatisticsTreeNode
+              key={`${child.key ?? child.label}-${index}`}
+              node={child}
+              depth={depth + 1}
+            />
+          ))}
+        </Accordion.Root>
+      </Accordion.Content>
+    </Accordion.Item>
   );
 }
 
-function Graph({ points, unit }: { points: { value: number }[]; unit: "bps" | "count" }) {
-  const line = useMemo(() => {
-    if (!points.length) return "";
-    const maximum = Math.max(1, ...points.map((point) => point.value));
-    const width = 640;
-    const height = 180;
-    return points
-      .map((point, index) => {
-        const x = points.length === 1 ? width : (index / (points.length - 1)) * width;
-        const y = height - (point.value / maximum) * height;
-        return `${x.toFixed(2)},${y.toFixed(2)}`;
-      })
-      .join(" ");
-  }, [points]);
-  const latest = points.at(-1)?.value ?? 0;
-  const maximum = Math.max(0, ...points.map((point) => point.value));
-  const format = unit === "bps" ? formatRate : (value: number) => value.toLocaleString();
+function StatisticsTree({ nodes }: { nodes: StatisticNode[] }) {
+  return (
+    <Accordion.Root
+      className="statistics-tree"
+      type="multiple"
+      defaultValue={nodes.map((node, index) => node.key ?? `${node.label}-${index}`)}
+    >
+      {nodes.map((node, index) => (
+        <StatisticsTreeNode key={`${node.key ?? node.label}-${index}`} node={node} />
+      ))}
+    </Accordion.Root>
+  );
+}
 
-  if (!points.length)
+function formatChartTime(value: number) {
+  return new Date(value * 1_000).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function ActivityChart({ data, graph }: { data: Array<Record<string, number>>; graph: GraphName }) {
+  const traffic = graph === "traffic";
+  const valueFormatter = traffic ? formatRate : (value: number) => value.toLocaleString();
+  const series: Array<{ key: SeriesName; label: string; color: string }> = traffic
+    ? [
+        { key: "download", label: "Download", color: "#4dd2ff" },
+        { key: "upload", label: "Upload", color: "#8b7bff" },
+      ]
+    : [{ key: graph, label: graphLabels[graph], color: "#4dd2ff" }];
+  const latest = data.at(-1) ?? {};
+
+  if (!data.length)
     return <p className="empty statistics-empty">No samples have been collected yet.</p>;
   return (
     <div className="statistics-chart-wrap">
       <div className="statistics-chart-scale">
-        <span>Peak {format(maximum)}</span>
-        <strong>Current {format(latest)}</strong>
+        {series.map(({ key, label, color }) => (
+          <span key={key}>
+            <i style={{ background: color }} /> {label}{" "}
+            <strong>{valueFormatter(latest[key] ?? 0)}</strong>
+          </span>
+        ))}
       </div>
-      <svg
-        className="statistics-chart"
-        viewBox="0 0 640 180"
-        role="img"
-        aria-label="Statistics graph"
-      >
-        <line x1="0" y1="180" x2="640" y2="180" />
-        <line x1="0" y1="90" x2="640" y2="90" />
-        <polyline points={line} />
-      </svg>
+      <div className="statistics-chart">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 14, right: 12, bottom: 0, left: 10 }}>
+            <defs>
+              {series.map(({ key, color }) => (
+                <linearGradient key={key} id={`statistics-fill-${key}`} x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="5%" stopColor={color} stopOpacity={0.32} />
+                  <stop offset="95%" stopColor={color} stopOpacity={0} />
+                </linearGradient>
+              ))}
+            </defs>
+            <CartesianGrid stroke="#26394d" strokeDasharray="3 4" vertical={false} />
+            <XAxis
+              dataKey="time"
+              type="number"
+              domain={["dataMin", "dataMax"]}
+              tickFormatter={formatChartTime}
+              minTickGap={60}
+              tick={{ fill: "#91a4b8", fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              tickFormatter={valueFormatter}
+              width={traffic ? 78 : 56}
+              tick={{ fill: "#91a4b8", fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={!traffic}
+            />
+            <Tooltip
+              labelFormatter={(value) => `Sampled ${formatChartTime(Number(value))}`}
+              formatter={(value, name) => [valueFormatter(Number(value)), name]}
+              contentStyle={{ background: "#121b26", border: "1px solid #395066", borderRadius: 7 }}
+              labelStyle={{ color: "#91a4b8" }}
+              itemStyle={{ color: "#d7e1ed" }}
+            />
+            <Legend wrapperStyle={{ color: "#b9cada", fontSize: 12, paddingTop: 8 }} />
+            {series.map(({ key, label, color }) => (
+              <Area
+                key={key}
+                type="monotone"
+                dataKey={key}
+                name={label}
+                stroke={color}
+                strokeWidth={2}
+                fill={`url(#statistics-fill-${key})`}
+                connectNulls
+                isAnimationActive={false}
+              />
+            ))}
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
 
 export function StatisticsView() {
-  const [graph, setGraph] = useState<GraphName>("download");
+  const [graph, setGraph] = useState<GraphName>("traffic");
   const [width, setWidth] = useState(300);
   const tree = useQuery({
     queryKey: queryKeys.statisticsTree,
     queryFn: api.statisticsTree,
     refetchInterval: 5_000,
   });
-  const series = useQuery({
-    queryKey: queryKeys.statisticsGraph(graph, width),
-    queryFn: () => api.statisticsGraph(graph, width),
+  const download = useQuery({
+    queryKey: queryKeys.statisticsGraph("download", width),
+    queryFn: () => api.statisticsGraph("download", width),
     refetchInterval: 5_000,
+    enabled: graph === "traffic",
   });
+  const upload = useQuery({
+    queryKey: queryKeys.statisticsGraph("upload", width),
+    queryFn: () => api.statisticsGraph("upload", width),
+    refetchInterval: 5_000,
+    enabled: graph === "traffic",
+  });
+  const secondary = useQuery({
+    queryKey: queryKeys.statisticsGraph(graph === "traffic" ? "connections" : graph, width),
+    queryFn: () => api.statisticsGraph(graph === "traffic" ? "connections" : graph, width),
+    refetchInterval: 5_000,
+    enabled: graph !== "traffic",
+  });
+  const chart = useMemo(() => {
+    if (graph === "traffic") {
+      const points = new Map<number, Record<string, number>>();
+      for (const point of download.data?.points ?? [])
+        points.set(point.t_unix, {
+          ...(points.get(point.t_unix) ?? {}),
+          time: point.t_unix,
+          download: point.value,
+        });
+      for (const point of upload.data?.points ?? [])
+        points.set(point.t_unix, {
+          ...(points.get(point.t_unix) ?? {}),
+          time: point.t_unix,
+          upload: point.value,
+        });
+      return [...points.values()].sort((left, right) => left.time - right.time);
+    }
+    return (secondary.data?.points ?? []).map((point) => ({
+      time: point.t_unix,
+      [graph]: point.value,
+    }));
+  }, [download.data, graph, secondary.data, upload.data]);
+  const activeQueries = graph === "traffic" ? [download, upload] : [secondary];
+  const pending = activeQueries.some((query) => query.isPending);
+  const failed = activeQueries.find((query) => query.isError);
+  const session =
+    graph === "traffic"
+      ? (download.data?.session ?? upload.data?.session)
+      : secondary.data?.session;
   return (
     <div className="content statistics-view">
       <h1>Statistics</h1>
@@ -152,22 +278,22 @@ export function StatisticsView() {
             </label>
           </div>
         </div>
-        {series.isPending || series.isError ? (
+        {pending || failed ? (
           <QueryNotice
-            loading={series.isPending}
-            error={series.error}
-            onRetry={() => void series.refetch()}
+            loading={pending}
+            error={failed?.error}
+            onRetry={() => activeQueries.forEach((query) => void query.refetch())}
           />
-        ) : series.data ? (
+        ) : (
           <>
-            <Graph points={series.data.points} unit={series.data.unit} />
+            <ActivityChart data={chart} graph={graph} />
             <div className="statistics-session">
-              <span>Session download {formatBytes(series.data.session.download_bytes)}</span>
-              <span>Session upload {formatBytes(series.data.session.upload_bytes)}</span>
-              <span>Session Kad {formatBytes(series.data.session.kad_bytes)}</span>
+              <span>Session download {formatBytes(session?.download_bytes)}</span>
+              <span>Session upload {formatBytes(session?.upload_bytes)}</span>
+              <span>Session Kad {formatBytes(session?.kad_bytes)}</span>
             </div>
           </>
-        ) : null}
+        )}
       </section>
       <section className="panel statistics-panel">
         <div className="panel-title">
@@ -181,11 +307,7 @@ export function StatisticsView() {
             onRetry={() => void tree.refetch()}
           />
         ) : tree.data?.nodes.length ? (
-          <div className="statistics-tree">
-            {tree.data.nodes.map((node, index) => (
-              <StatisticsTreeNode key={`${node.key ?? node.label}-${index}`} node={node} />
-            ))}
-          </div>
+          <StatisticsTree nodes={tree.data.nodes} />
         ) : (
           <p className="empty">No statistics are available from the daemon.</p>
         )}
