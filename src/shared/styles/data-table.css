@@ -47,9 +47,25 @@
 }
 
 .actions-column {
+  width: max-content;
   min-width: max-content;
   white-space: nowrap;
   overflow: visible !important;
+}
+
+th.actions-column,
+td.actions-column {
+  padding-right: 10px;
+  padding-left: 10px;
+  text-overflow: clip;
+}
+
+.actions-column--compact {
+  width: 1%;
+}
+
+.actions-column--fixed {
+  width: 80px;
 }
 
 .data-table.server-table {

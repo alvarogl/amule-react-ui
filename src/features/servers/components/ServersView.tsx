@@ -175,7 +175,7 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
                 <col style={{ width: 210 }} />
                 <col style={{ width: 120 }} />
                 <col style={{ width: 130 }} />
-                <col className="actions-column" />
+                <col className="actions-column actions-column--compact" />
               </colgroup>
               <thead>
                 <tr>
@@ -207,7 +207,7 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
                     direction={direction}
                     onSort={toggleSort}
                   />
-                  <th className="actions-column" />
+                  <th className="actions-column actions-column--compact" />
                 </tr>
               </thead>
               <tbody>
@@ -243,7 +243,7 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
                           <option value="high">High</option>
                         </select>
                       </td>
-                      <td className="actions-column">
+                      <td className="actions-column actions-column--compact">
                         {connected ? (
                           <button
                             className="icon active-action"

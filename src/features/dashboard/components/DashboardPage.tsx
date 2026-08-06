@@ -228,7 +228,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
         />
       </div>
       <div className="table-wrap">
-        <table className="data-table">
+        <table className="data-table transfer-table">
           <colgroup>
             <col style={{ width: 46 }} />
             <col style={{ width: 330 }} />
@@ -237,7 +237,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
             <col style={{ width: 140 }} />
             <col style={{ width: 185 }} />
             <col style={{ width: 105 }} />
-            <col style={{ width: 64 }} />
+            <col className="actions-column actions-column--fixed" />
           </colgroup>
           <thead>
             <tr>
@@ -290,13 +290,13 @@ function Transfers({ downloads }: { downloads: Download[] }) {
                 direction={direction}
                 onSort={toggleSort}
               />
-              <th />
+              <th className="actions-column actions-column--fixed" />
             </tr>
           </thead>
           <tbody>
             {orderedRows.map((d) => (
               <tr key={d.hash}>
-                <td>
+                <td className="actions-column actions-column--fixed">
                   <input
                     type="checkbox"
                     checked={selected.includes(d.hash)}
