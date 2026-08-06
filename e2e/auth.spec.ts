@@ -23,6 +23,8 @@ test("covers core session and mutation workflows", async ({ page }) => {
   let createdCategory: unknown;
   let kadDisconnect: unknown;
   let clearedLog = false;
+  let addedShareRoot: unknown;
+  let savedPreferences: unknown;
   await page.route("**/api/v0/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -87,6 +89,9 @@ test("covers core session and mutation workflows", async ({ page }) => {
       await json({ ok: true });
     } else if (url.pathname.endsWith("/servers")) {
       await json({ servers: [] });
+    } else if (url.pathname.endsWith("/shared/directories") && request.method() === "POST") {
+      addedShareRoot = request.postDataJSON();
+      await json({ ok: true, rejected: [] });
     } else if (url.pathname.endsWith("/shared/directories")) {
       await json({ directories: [] });
     } else if (url.pathname.endsWith("/shared")) {
@@ -122,6 +127,9 @@ test("covers core session and mutation workflows", async ({ page }) => {
         points: [],
         session: { download_bytes: 0, upload_bytes: 0, kad_bytes: 0 },
       });
+    } else if (url.pathname.endsWith("/preferences") && request.method() === "PATCH") {
+      savedPreferences = request.postDataJSON();
+      await json(savedPreferences);
     } else if (url.pathname.endsWith("/preferences")) {
       await json({ general: { nickname: "Test node" } });
     } else if (url.pathname.endsWith("/auth/passwords")) {
@@ -213,6 +221,16 @@ test("covers core session and mutation workflows", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Clear aMule log?" })).toBeVisible();
   await page.getByRole("button", { name: "Clear log", exact: true }).click();
   await expect.poll(() => clearedLog).toBe(true);
+
+  await page.locator("nav").getByRole("button", { name: "Shared" }).click();
+  await page.getByLabel("Directory path").fill("/media/test");
+  await page.getByRole("button", { name: "Add folder" }).click();
+  await expect.poll(() => addedShareRoot).toEqual({ path: "/media/test", recursive: true });
+
+  await page.locator("nav").getByRole("button", { name: "Preferences" }).click();
+  await page.getByLabel("Nickname").fill("Updated node");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect.poll(() => savedPreferences).toEqual({ general: { nickname: "Updated node" } });
 
   expireNextStatus = true;
   await page.reload();
