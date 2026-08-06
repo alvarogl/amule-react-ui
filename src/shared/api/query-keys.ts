@@ -1,5 +1,6 @@
 export const queryKeys = {
   status: ["status"] as const,
+  version: ["version"] as const,
   downloads: ["downloads"] as const,
   uploadClients: ["clients", "uploads"] as const,
   clients: (filter: string) => ["clients", filter] as const,

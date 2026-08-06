@@ -19,6 +19,19 @@ export const statusSchema = z.object({
     total_source_count: z.number(),
   }),
 });
+export const versionSchema = z.object({
+  name: z.literal("amuleapi"),
+  api_version: z.string(),
+  amule_version: z.string(),
+  daemon_version: z.string(),
+  update: z.object({
+    check_enabled: z.boolean(),
+    checked: z.boolean(),
+    latest_version: z.string(),
+    update_available: z.boolean().nullable(),
+    last_checked: z.number().nullable(),
+  }),
+});
 export const downloadSchema = z
   .object({
     hash: z.string(),
@@ -318,6 +331,9 @@ export const api = {
   logout: () => request("/auth/logout", z.unknown(), { method: "POST" }),
   session: () => request("/auth/session", sessionSchema),
   status: () => request("/status", statusSchema),
+  version: () => request("/version", versionSchema),
+  checkVersion: () =>
+    request("/version/check", z.object({ status: z.literal("started") }), { method: "POST" }),
   downloads: () => request("/downloads?include_completed=true", downloadsSchema),
   searches: () => request("/search", searchesSchema),
   startSearch: (query: string, type: "local" | "global" | "kad", filters: SearchFilters = {}) =>

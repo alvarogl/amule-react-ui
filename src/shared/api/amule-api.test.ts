@@ -10,6 +10,7 @@ import {
   sharedDirectoriesSchema,
   sharedFilesSchema,
   statusSchema,
+  versionSchema,
   statisticsGraphSchema,
   statisticsTreeSchema,
 } from "./amule-api";
@@ -26,6 +27,22 @@ describe("aMule schemas", () => {
         queue: { upload_queue_length: 0, total_source_count: 3 },
       }).ed2k.low_id,
     ).toBe(false));
+  it("accepts daemon update availability", () =>
+    expect(
+      versionSchema.parse({
+        name: "amuleapi",
+        api_version: "v0",
+        amule_version: "3.0.1",
+        daemon_version: "3.0.1",
+        update: {
+          check_enabled: true,
+          checked: true,
+          latest_version: "3.0.2",
+          update_available: true,
+          last_checked: 1,
+        },
+      }).update.update_available,
+    ).toBe(true));
   it("rejects a malformed download response", () =>
     expect(() => downloadsSchema.parse({ downloads: [{ hash: 1 }] })).toThrow());
   it("accepts search ratings and Kad notes", () =>
