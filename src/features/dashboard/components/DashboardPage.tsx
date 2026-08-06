@@ -11,6 +11,7 @@ import {
   Search,
   Server,
   Settings,
+  Share2,
   ShieldCheck,
   Trash2,
 } from "lucide-react";
@@ -28,6 +29,7 @@ import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { formatMebibytes, formatRate } from "@/shared/lib/formatters";
 import { useSortState } from "@/shared/hooks/use-sort-state";
 import { getErrorMessage } from "@/shared/lib/errors";
+import { SharedFilesView } from "@/features/shared/components/SharedFilesView";
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
 
@@ -492,7 +494,9 @@ function Uploads() {
 }
 export function DashboardPage() {
   const { logout } = useSession();
-  const [view, setView] = useState<"dashboard" | "search" | "servers" | "categories">("dashboard");
+  const [view, setView] = useState<"dashboard" | "search" | "servers" | "categories" | "shared">(
+    "dashboard",
+  );
   const status = useQuery({ queryKey: queryKeys.status, queryFn: api.status });
   const downloads = useQuery({
     queryKey: queryKeys.downloads,
@@ -515,6 +519,7 @@ export function DashboardPage() {
     { id: "search" as const, label: "Search", icon: Search },
     { id: "servers" as const, label: "Servers", icon: Server },
     { id: "categories" as const, label: "Categories", icon: FolderTree },
+    { id: "shared" as const, label: "Shared", icon: Share2 },
   ];
   const body =
     view === "search" ? (
@@ -525,6 +530,8 @@ export function DashboardPage() {
       />
     ) : view === "categories" ? (
       <CategoriesView />
+    ) : view === "shared" ? (
+      <SharedFilesView />
     ) : (
       <div className="content">
         <h1>Dashboard</h1>

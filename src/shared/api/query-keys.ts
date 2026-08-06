@@ -4,6 +4,8 @@ export const queryKeys = {
   uploadClients: ["clients", "uploads"] as const,
   servers: ["servers"] as const,
   categories: ["categories"] as const,
+  sharedFiles: ["shared-files"] as const,
+  sharedFile: (hash: string) => ["shared-file", hash] as const,
   searches: ["searches"] as const,
   searchResults: (searchId: number | undefined) => ["search-results", searchId] as const,
   download: (hash: string) => ["download", hash] as const,

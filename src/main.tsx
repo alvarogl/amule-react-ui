@@ -14,6 +14,7 @@ import "@/features/transfers/details.css";
 import "@/features/search/search.css";
 import "@/features/servers/servers.css";
 import "@/features/categories/categories.css";
+import "@/features/shared/shared.css";
 import "@/shared/styles/data-table.css";
 import "@/shared/styles/confirm-dialog.css";
 createRoot(document.getElementById("root")!).render(

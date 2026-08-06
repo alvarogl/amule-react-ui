@@ -101,6 +101,34 @@ export const categoriesSchema = z.object({
       .passthrough(),
   ),
 });
+export const sharedFileSchema = z
+  .object({
+    hash: z.string(),
+    name: z.string(),
+    ed2k_link: z.string(),
+    size: z.number(),
+    priority: z.enum(["very_low", "low", "normal", "high", "release"]),
+    priority_auto: z.boolean(),
+    complete_sources: z.number(),
+    xfer: z.object({ session: z.number(), total: z.number() }),
+    requests: z.object({ session: z.number(), total: z.number() }),
+    accepts: z.object({ session: z.number(), total: z.number() }),
+    upload_speed_bps: z.number(),
+    uploading: z.number(),
+    last_upload: z.number(),
+    shared_since: z.number(),
+    file_type: z.string().optional(),
+    share_ratio: z.number().optional(),
+    path: z.string().optional(),
+    complete_sources_range: z.object({ low: z.number(), high: z.number() }).optional(),
+    aich_hash: z.string().optional(),
+    part_count: z.number().optional(),
+    queued_count: z.number().optional(),
+    comment: z.string().optional(),
+    rating: z.number().optional(),
+  })
+  .passthrough();
+export const sharedFilesSchema = z.object({ shared: z.array(sharedFileSchema) }).passthrough();
 export const clientsSchema = z.object({
   clients: z.array(
     z
@@ -130,6 +158,7 @@ export const sessionSchema = z.object({
 export type Status = z.infer<typeof statusSchema>;
 export type Download = z.infer<typeof downloadSchema>;
 export type SearchResult = z.infer<typeof searchResultsSchema>["results"][number];
+export type SharedFile = z.infer<typeof sharedFileSchema>;
 export type SearchFilters = {
   file_type?: string;
   extension?: string;
@@ -231,6 +260,8 @@ export const api = {
       body: JSON.stringify({ network }),
     }),
   categories: () => request("/categories", categoriesSchema),
+  sharedFiles: () => request("/shared", sharedFilesSchema),
+  sharedFile: (hash: string) => request(`/shared/${hash}`, sharedFileSchema),
   addCategory: (name: string, path?: string) =>
     request("/categories", z.object({ index: z.number(), name: z.string() }).passthrough(), {
       method: "POST",

@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { unauthorizedEvent } from "@/shared/auth/unauthorized";
-import { api, downloadsSchema, searchResultsSchema, statusSchema } from "./amule-api";
+import {
+  api,
+  downloadsSchema,
+  searchResultsSchema,
+  sharedFilesSchema,
+  statusSchema,
+} from "./amule-api";
 
 afterEach(() => vi.unstubAllGlobals());
 describe("aMule schemas", () => {
@@ -35,6 +41,29 @@ describe("aMule schemas", () => {
         ],
         progress: { state: "finished", kind: "global", percent: 100 },
       }).results[0].comments,
+    ).toHaveLength(1));
+  it("accepts a shared-file list entry", () =>
+    expect(
+      sharedFilesSchema.parse({
+        shared: [
+          {
+            hash: "hash",
+            name: "file",
+            ed2k_link: "ed2k://|file|file|1|hash|/",
+            size: 1,
+            priority: "normal",
+            priority_auto: false,
+            complete_sources: 2,
+            xfer: { session: 0, total: 1 },
+            requests: { session: 0, total: 1 },
+            accepts: { session: 0, total: 1 },
+            upload_speed_bps: 0,
+            uploading: 0,
+            last_upload: 0,
+            shared_since: 0,
+          },
+        ],
+      }).shared,
     ).toHaveLength(1));
 });
 

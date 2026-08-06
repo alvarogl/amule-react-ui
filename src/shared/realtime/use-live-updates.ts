@@ -11,6 +11,7 @@ const snapshots = [
   queryKeys.servers,
   queryKeys.uploadClients,
   queryKeys.categories,
+  queryKeys.sharedFiles,
   queryKeys.searches,
 ];
 export function useLiveUpdates() {
@@ -36,6 +37,9 @@ export function useLiveUpdates() {
       "log_appended",
       "search_result_added",
       "search_progress",
+      "shared_added",
+      "shared_updated",
+      "shared_removed",
     ].forEach((type) =>
       stream.addEventListener(type, () => {
         refresh();
