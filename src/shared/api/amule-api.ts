@@ -262,6 +262,20 @@ export const api = {
   categories: () => request("/categories", categoriesSchema),
   sharedFiles: () => request("/shared", sharedFilesSchema),
   sharedFile: (hash: string) => request(`/shared/${hash}`, sharedFileSchema),
+  reloadSharedFiles: () =>
+    request("/shared/reload", z.object({ ok: z.literal(true) }).passthrough(), { method: "POST" }),
+  patchSharedFile: (
+    hash: string,
+    patch: { priority?: "very_low" | "low" | "normal" | "high" | "release" | "auto" },
+  ) =>
+    request(`/shared/${hash}`, sharedFileSchema, {
+      method: "PATCH",
+      body: JSON.stringify(patch),
+    }),
+  verifySharedFile: (hash: string) =>
+    request(`/shared/${hash}/verify`, z.object({ ok: z.literal(true) }).passthrough(), {
+      method: "POST",
+    }),
   addCategory: (name: string, path?: string) =>
     request("/categories", z.object({ index: z.number(), name: z.string() }).passthrough(), {
       method: "POST",

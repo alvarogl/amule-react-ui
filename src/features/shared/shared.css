@@ -1,11 +1,29 @@
 .data-table.shared-table {
   min-width: 0;
 }
-.shared-table td small {
-  display: block;
-  margin-top: 3px;
-  color: #91a4b8;
-  font-size: 11px;
+.shared-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.shared-heading .subtle {
+  margin: 0;
+}
+.shared-heading button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.shared-priority {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #395066;
+  border-radius: 6px;
+  padding: 6px;
+  background: #0b1017;
+  color: #d7e1ed;
 }
 .shared-detail-grid {
   display: grid;
