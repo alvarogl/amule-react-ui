@@ -1,7 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FolderPlus, Info, RefreshCw, ShieldCheck, Trash2, X } from "lucide-react";
+import { FolderPlus, Info, Pencil, RefreshCw, ShieldCheck, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { api, type SharedFile } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
@@ -134,6 +134,70 @@ function SharedFileDetails({ file }: { file: SharedFile }) {
               />
             </>
           )}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+type SharedDirectory = { path: string; recursive: boolean };
+
+function ShareRootRecursionEditor({
+  directory,
+  directories,
+}: {
+  directory: SharedDirectory;
+  directories: SharedDirectory[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [recursive, setRecursive] = useState(directory.recursive);
+  const client = useQueryClient();
+  const update = useMutation({
+    mutationFn: () =>
+      api.replaceSharedDirectories(
+        directories.map((item) => (item.path === directory.path ? { ...item, recursive } : item)),
+      ),
+    onSuccess: (result) => {
+      const rejected = result.rejected ?? [];
+      void client.invalidateQueries({ queryKey: queryKeys.sharedDirectories });
+      void client.invalidateQueries({ queryKey: queryKeys.sharedFiles });
+      if (rejected.length) {
+        toast.error(
+          `Some share roots were rejected: ${rejected.map((entry) => entry.reason).join(", ")}.`,
+        );
+        return;
+      }
+      setOpen(false);
+      toast.success("Share-root settings saved.");
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+  return (
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Trigger asChild>
+        <button className="icon" aria-label={`Edit ${directory.path}`} title="Edit share root">
+          <Pencil size={15} />
+        </button>
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="drawer-overlay" />
+        <Dialog.Content className="share-root-dialog">
+          <Dialog.Title>Edit share root</Dialog.Title>
+          <p title={directory.path}>{directory.path}</p>
+          <label>
+            <input
+              type="checkbox"
+              checked={recursive}
+              onChange={(event) => setRecursive(event.target.checked)}
+            />
+            Include subfolders
+          </label>
+          <div className="share-root-dialog__actions">
+            <Dialog.Close className="muted">Cancel</Dialog.Close>
+            <button disabled={update.isPending} onClick={() => update.mutate()}>
+              Save
+            </button>
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -284,22 +348,28 @@ export function SharedFilesView() {
               <li key={directory.path}>
                 <span title={directory.path}>{directory.path}</span>
                 <small>{directory.recursive ? "Including subfolders" : "This folder only"}</small>
-                <ConfirmDialog
-                  trigger={
-                    <button
-                      className="icon danger"
-                      aria-label={`Remove ${directory.path}`}
-                      title="Remove folder"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  }
-                  title="Remove share root?"
-                  description={`Stop sharing “${directory.path}”? Files are not deleted.`}
-                  actionLabel="Remove folder"
-                  dangerous
-                  onConfirm={() => removeDirectory.mutate(directory.path)}
-                />
+                <div className="share-root-actions">
+                  <ShareRootRecursionEditor
+                    directory={directory}
+                    directories={directories.data.directories}
+                  />
+                  <ConfirmDialog
+                    trigger={
+                      <button
+                        className="icon danger"
+                        aria-label={`Remove ${directory.path}`}
+                        title="Remove folder"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    }
+                    title="Remove share root?"
+                    description={`Stop sharing “${directory.path}”? Files are not deleted.`}
+                    actionLabel="Remove folder"
+                    dangerous
+                    onConfirm={() => removeDirectory.mutate(directory.path)}
+                  />
+                </div>
               </li>
             ))}
           </ul>

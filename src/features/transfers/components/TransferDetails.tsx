@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
-import { formatMebibytes } from "@/shared/lib/formatters";
+import { formatDuration, formatMebibytes } from "@/shared/lib/formatters";
 import { getErrorMessage } from "@/shared/lib/errors";
 
 export function TransferDetails({ hash, name }: { hash: string; name: string }) {
@@ -44,6 +44,9 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
     onError: (error) => toast.error(getErrorMessage(error)),
   });
   const data = detail.data;
+  const parts = data?.progress?.parts ?? [];
+  const partState = (state: string) =>
+    ["complete", "transferring", "corrupt"].includes(state) ? state : "empty";
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
@@ -65,6 +68,44 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
               <p className="subtle">
                 {data.status} · {data.size ? formatMebibytes(data.size) : "Size unavailable"}
               </p>
+              <h3>Availability</h3>
+              <dl className="detail-stats">
+                <div>
+                  <dt>Sources</dt>
+                  <dd>
+                    {data.sources
+                      ? `${data.sources.total} total · ${data.sources.transferring} transferring · ${data.sources.a4af} A4AF`
+                      : "Unavailable"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Available parts</dt>
+                  <dd>
+                    {data.part_count === undefined
+                      ? "Unavailable"
+                      : `${data.available_part_count ?? 0} / ${data.part_count}`}
+                  </dd>
+                </div>
+                <div>
+                  <dt>ETA</dt>
+                  <dd>
+                    {data.remaining_time === undefined || data.remaining_time < 0
+                      ? "Unavailable"
+                      : formatDuration(data.remaining_time)}
+                  </dd>
+                </div>
+              </dl>
+              {parts.length ? (
+                <div className="detail-part-progress" aria-label="Part availability">
+                  {parts.map((part, index) => (
+                    <span
+                      className={`detail-part detail-part--${partState(part.state)}`}
+                      key={index}
+                      title={`Part ${index + 1}: ${part.state} · ${part.sources} source${part.sources === 1 ? "" : "s"}`}
+                    />
+                  ))}
+                </div>
+              ) : null}
               <h3>Alternate filenames</h3>
               <ul>
                 {names.data?.filenames.map((item) => (

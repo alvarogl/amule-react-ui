@@ -39,12 +39,28 @@ export const downloadSchema = z
     size: z.number().optional(),
     size_done: z.number().optional(),
     size_xfer: z.number().optional(),
-    progress: z.object({ percent: z.number() }).optional(),
+    progress: z
+      .object({
+        percent: z.number(),
+        parts: z.array(z.object({ state: z.string(), sources: z.number() })).optional(),
+      })
+      .optional(),
     status: z.string(),
     speed_bps: z.number().optional(),
     category: z.number().optional(),
     priority: z.enum(["low", "normal", "high"]).optional(),
     priority_auto: z.boolean().optional(),
+    sources: z
+      .object({
+        total: z.number(),
+        not_current: z.number(),
+        transferring: z.number(),
+        a4af: z.number(),
+      })
+      .optional(),
+    available_part_count: z.number().optional(),
+    part_count: z.number().optional(),
+    remaining_time: z.number().optional(),
   })
   .passthrough();
 export const downloadsSchema = z.object({ downloads: z.array(downloadSchema) }).passthrough();
@@ -411,6 +427,11 @@ export const api = {
     request("/shared/directories", sharedDirectoryMutationSchema, {
       method: "POST",
       body: JSON.stringify({ path, recursive }),
+    }),
+  replaceSharedDirectories: (directories: Array<{ path: string; recursive: boolean }>) =>
+    request("/shared/directories", sharedDirectoryMutationSchema, {
+      method: "PUT",
+      body: JSON.stringify({ directories }),
     }),
   removeSharedDirectory: (path: string) =>
     request(`/shared/directories?path=${encodeURIComponent(path)}`, sharedDirectoryMutationSchema, {

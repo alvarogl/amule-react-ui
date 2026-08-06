@@ -15,8 +15,8 @@ function isRecord(value: unknown): value is PreferenceRecord {
 }
 
 export function numberLimits(path: string) {
-  if (path.endsWith("upnp_tcp_port") || path.endsWith("proxy_port")) return { min: 0, max: 65_535 };
-  if (path.endsWith("tcp_port") || path.endsWith("udp_port")) return { min: 1, max: 65_535 };
+  if (path.endsWith("upnp_tcp_port")) return { min: 0, max: 65_535 };
+  if (path.endsWith("_port") || path.endsWith(".port")) return { min: 1, max: 65_535 };
   return { min: 0 };
 }
 
@@ -38,5 +38,16 @@ export function validatePreferences(value: unknown, path = ""): string[] {
   }
   if (typeof value === "string" && enumOptions[path] && !enumOptions[path].includes(value))
     return [`${labelFor(path)} has an invalid value.`];
+  if (typeof value === "string" && path.endsWith("_url") && value && !isHttpUrl(value))
+    return [`${labelFor(path)} must be a valid HTTP or HTTPS URL.`];
   return [];
+}
+
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }

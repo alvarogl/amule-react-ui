@@ -13,4 +13,16 @@ describe("advanced preference validation", () => {
       "Security.Shared Files Visibility has an invalid value.",
     ]);
   });
+
+  it("validates nested remote-control ports and update URLs", () => {
+    expect(
+      validatePreferences({
+        remote_controls: { amuleapi: { port: 70_000 } },
+        servers: { update_url: "ftp://example.test/server.met" },
+      }),
+    ).toEqual([
+      "Remote Controls.Amuleapi.Port must be between 1 and 65535.",
+      "Servers.Update Url must be a valid HTTP or HTTPS URL.",
+    ]);
+  });
 });

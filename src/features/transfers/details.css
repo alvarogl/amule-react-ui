@@ -42,6 +42,43 @@
   justify-content: space-between;
   gap: 10px;
 }
+.detail-stats {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.detail-stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.detail-stats dt {
+  color: #91a4b8;
+}
+.detail-stats dd {
+  margin: 0;
+  text-align: right;
+}
+.detail-part-progress {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5px, 1fr));
+  gap: 2px;
+  margin-top: 12px;
+}
+.detail-part {
+  min-height: 8px;
+  border-radius: 2px;
+  background: #26394d;
+}
+.detail-part--complete {
+  background: #4fb286;
+}
+.detail-part--transferring {
+  background: #7bdbff;
+}
+.detail-part--corrupt {
+  background: #d65b68;
+}
 .detail-action,
 .detail-actions .muted {
   padding: 5px 7px;

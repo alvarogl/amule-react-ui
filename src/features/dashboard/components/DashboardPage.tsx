@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, type FormEvent } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -59,14 +59,37 @@ function Metric({ label, value }: { label: string; value: string }) {
 }
 function UpdateStatus() {
   const client = useQueryClient();
-  const version = useQuery({ queryKey: queryKeys.version, queryFn: api.version, retry: false });
+  const lastCheckedBeforeRequest = useRef<number | null>(null);
+  const [waitingForResult, setWaitingForResult] = useState(false);
+  const version = useQuery({
+    queryKey: queryKeys.version,
+    queryFn: api.version,
+    retry: false,
+    refetchInterval: waitingForResult ? 3_000 : false,
+  });
+  useEffect(() => {
+    const lastChecked = version.data?.update.last_checked;
+    if (
+      waitingForResult &&
+      lastChecked !== null &&
+      lastChecked !== undefined &&
+      lastChecked !== lastCheckedBeforeRequest.current
+    ) {
+      setWaitingForResult(false);
+      toast.success("Version check completed.");
+    }
+  }, [version.data?.update.last_checked, waitingForResult]);
   const check = useMutation({
     mutationFn: api.checkVersion,
     onSuccess: () => {
-      toast.success("Version check started. Refresh this card shortly for the result.");
+      lastCheckedBeforeRequest.current = version.data?.update.last_checked ?? null;
+      setWaitingForResult(true);
       void client.invalidateQueries({ queryKey: queryKeys.version });
     },
-    onError: (error) => toast.error(getErrorMessage(error)),
+    onError: (error) => {
+      setWaitingForResult(false);
+      toast.error(getErrorMessage(error));
+    },
   });
   if (!version.data?.update.check_enabled) return null;
   const update = version.data.update;
@@ -83,7 +106,11 @@ function UpdateStatus() {
         <strong>{state}</strong>
         <span>Running {version.data.daemon_version || version.data.amule_version}</span>
       </div>
-      <button className="muted" disabled={check.isPending} onClick={() => check.mutate()}>
+      <button
+        className="muted"
+        disabled={check.isPending || waitingForResult}
+        onClick={() => check.mutate()}
+      >
         <RefreshCw size={15} /> Check now
       </button>
     </section>
@@ -462,32 +489,49 @@ function Uploads() {
     queryFn: api.uploadClients,
     refetchInterval: 10_000,
   });
-  const peers = [...(uploads.data?.clients ?? [])].sort((left, right) => {
-    const value = (peer: UploadPeer) =>
-      sort === "peer"
-        ? peer.client_name || peer.ip
-        : sort === "file"
-          ? peer.upload_file_name
-          : sort === "client"
-            ? `${peer.software} ${peer.software_version}`
-            : peer.upload_speed_bps;
-    const leftValue = value(left);
-    const rightValue = value(right);
-    const comparison =
-      typeof leftValue === "number"
-        ? leftValue - (rightValue as number)
-        : String(leftValue).localeCompare(String(rightValue));
-    return direction === "asc" ? comparison : -comparison;
-  });
+  const [filter, setFilter] = useState("");
+  const peers = (uploads.data?.clients ?? [])
+    .filter((peer) =>
+      `${peer.client_name} ${peer.ip} ${peer.upload_file_name} ${peer.software} ${peer.software_version}`
+        .toLowerCase()
+        .includes(filter.toLowerCase()),
+    )
+    .sort((left, right) => {
+      const value = (peer: UploadPeer) =>
+        sort === "peer"
+          ? peer.client_name || peer.ip
+          : sort === "file"
+            ? peer.upload_file_name
+            : sort === "client"
+              ? `${peer.software} ${peer.software_version}`
+              : peer.upload_speed_bps;
+      const leftValue = value(left);
+      const rightValue = value(right);
+      const comparison =
+        typeof leftValue === "number"
+          ? leftValue - (rightValue as number)
+          : String(leftValue).localeCompare(String(rightValue));
+      return direction === "asc" ? comparison : -comparison;
+    });
   return (
     <section className="panel upload-panel">
       <div className="panel-title">
         <h2>Uploading now</h2>
         <span>{uploads.data?.clients.length ?? 0} active</span>
       </div>
+      <div className="upload-filter">
+        <input
+          aria-label="Filter uploads"
+          placeholder="Filter peer, file, or client"
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
+        />
+      </div>
       {uploads.isError ? (
         <p className="empty">Unable to load upload activity.</p>
-      ) : uploads.data?.clients.length ? (
+      ) : !uploads.data?.clients.length ? (
+        <p className="empty">No active uploads.</p>
+      ) : peers.length ? (
         <div className="table-wrap">
           <table className="data-table">
             <colgroup>
@@ -545,7 +589,7 @@ function Uploads() {
           </table>
         </div>
       ) : (
-        <p className="empty">No active uploads.</p>
+        <p className="empty">No uploads match this filter.</p>
       )}
     </section>
   );

@@ -71,6 +71,41 @@
 .share-root-list small {
   color: #91a4b8;
 }
+.share-root-actions {
+  display: flex;
+  gap: 6px;
+}
+.share-root-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: min(420px, calc(100vw - 32px));
+  transform: translate(-50%, -50%);
+  border: 1px solid #395066;
+  border-radius: 9px;
+  padding: 22px;
+  background: #121b26;
+  color: #d7e1ed;
+  box-shadow: 0 16px 42px #0009;
+}
+.share-root-dialog p {
+  overflow: hidden;
+  margin: 12px 0 18px;
+  color: #91a4b8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.share-root-dialog label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.share-root-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+}
 .shared-priority {
   width: 100%;
   min-width: 0;

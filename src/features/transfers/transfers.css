@@ -65,6 +65,13 @@
 .upload-panel {
   margin-top: 16px;
 }
+.upload-filter {
+  padding: 10px 18px;
+  border-bottom: 1px solid #26394d;
+}
+.upload-filter input {
+  width: min(360px, 100%);
+}
 .bulk-tools .bulk-remove {
   background: #7f2733;
   color: #ffe2e5;
