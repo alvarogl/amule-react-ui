@@ -1,4 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
+import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Info, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { toast } from "sonner";
@@ -11,14 +12,76 @@ import { useSortState } from "@/shared/hooks/use-sort-state";
 import { getErrorMessage } from "@/shared/lib/errors";
 import { formatMebibytes, formatRate } from "@/shared/lib/formatters";
 
+function SharedFileMetadataForm({ file }: { file: SharedFile }) {
+  const [name, setName] = useState(file.name);
+  const [comment, setComment] = useState(file.comment ?? "");
+  const [rating, setRating] = useState(String(file.rating ?? 0));
+  const client = useQueryClient();
+  const save = useMutation({
+    mutationFn: (patch: { name?: string; comment?: string; rating?: number }) =>
+      api.patchSharedFile(file.hash, patch),
+    onSuccess: () => {
+      toast.success("Shared-file metadata saved.");
+      void client.invalidateQueries({ queryKey: queryKeys.sharedFiles });
+      void client.invalidateQueries({ queryKey: queryKeys.sharedFile(file.hash) });
+    },
+    onError: (error) => toast.error(getErrorMessage(error)),
+  });
+  function rename(event: FormEvent) {
+    event.preventDefault();
+    if (!name.trim()) return toast.warning("A file name is required.");
+    save.mutate({ name: name.trim() });
+  }
+  function saveReview(event: FormEvent) {
+    event.preventDefault();
+    if (comment.length > 50) return toast.warning("A comment can be at most 50 characters.");
+    save.mutate({ comment, rating: Number(rating) });
+  }
+  return (
+    <>
+      <form className="shared-metadata-form" onSubmit={rename}>
+        <label>
+          File name
+          <input value={name} onChange={(event) => setName(event.target.value)} />
+        </label>
+        <button disabled={save.isPending || name === file.name}>Rename</button>
+      </form>
+      <form className="shared-metadata-form" onSubmit={saveReview}>
+        <label>
+          Your rating
+          <select value={rating} onChange={(event) => setRating(event.target.value)}>
+            <option value="0">Unrated</option>
+            <option value="1">1 / 5</option>
+            <option value="2">2 / 5</option>
+            <option value="3">3 / 5</option>
+            <option value="4">4 / 5</option>
+            <option value="5">5 / 5</option>
+          </select>
+        </label>
+        <label className="shared-comment">
+          Your comment
+          <input
+            maxLength={50}
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+          />
+        </label>
+        <button disabled={save.isPending}>Save review</button>
+      </form>
+    </>
+  );
+}
+
 function SharedFileDetails({ file }: { file: SharedFile }) {
+  const [open, setOpen] = useState(false);
   const detail = useQuery({
     queryKey: queryKeys.sharedFile(file.hash),
     queryFn: () => api.sharedFile(file.hash),
+    enabled: open,
   });
   const data = detail.data;
   return (
-    <Dialog.Root>
+    <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
         <button className="icon" aria-label={`View details for ${file.name}`} title="File details">
           <Info size={15} />
@@ -38,32 +101,38 @@ function SharedFileDetails({ file }: { file: SharedFile }) {
               onRetry={() => void detail.refetch()}
             />
           ) : (
-            <dl className="shared-detail-grid">
-              <dt>Path</dt>
-              <dd title={data.path}>{data.path ?? "Unavailable"}</dd>
-              <dt>Type</dt>
-              <dd>{data.file_type ?? "Unknown"}</dd>
-              <dt>Share ratio</dt>
-              <dd>{data.share_ratio?.toFixed(2) ?? "—"}</dd>
-              <dt>Complete sources</dt>
-              <dd>
-                {data.complete_sources_range
-                  ? `${data.complete_sources_range.low}–${data.complete_sources_range.high}`
-                  : data.complete_sources}
-              </dd>
-              <dt>Upload queue</dt>
-              <dd>{data.queued_count ?? 0}</dd>
-              <dt>Uploaded</dt>
-              <dd>{formatMebibytes(data.xfer.total)}</dd>
-              <dt>Requests accepted</dt>
-              <dd>
-                {data.accepts.total} / {data.requests.total}
-              </dd>
-              <dt>Your rating</dt>
-              <dd>{data.rating ? `${data.rating}/5` : "Unrated"}</dd>
-              <dt>Your comment</dt>
-              <dd>{data.comment || "No comment"}</dd>
-            </dl>
+            <>
+              <dl className="shared-detail-grid">
+                <dt>Path</dt>
+                <dd title={data.path}>{data.path ?? "Unavailable"}</dd>
+                <dt>Type</dt>
+                <dd>{data.file_type ?? "Unknown"}</dd>
+                <dt>Share ratio</dt>
+                <dd>{data.share_ratio?.toFixed(2) ?? "—"}</dd>
+                <dt>Complete sources</dt>
+                <dd>
+                  {data.complete_sources_range
+                    ? `${data.complete_sources_range.low}–${data.complete_sources_range.high}`
+                    : data.complete_sources}
+                </dd>
+                <dt>Upload queue</dt>
+                <dd>{data.queued_count ?? 0}</dd>
+                <dt>Uploaded</dt>
+                <dd>{formatMebibytes(data.xfer.total)}</dd>
+                <dt>Requests accepted</dt>
+                <dd>
+                  {data.accepts.total} / {data.requests.total}
+                </dd>
+                <dt>Your rating</dt>
+                <dd>{data.rating ? `${data.rating}/5` : "Unrated"}</dd>
+                <dt>Your comment</dt>
+                <dd>{data.comment || "No comment"}</dd>
+              </dl>
+              <SharedFileMetadataForm
+                key={`${data.hash}-${data.name}-${data.comment ?? ""}-${data.rating ?? 0}`}
+                file={data}
+              />
+            </>
           )}
         </Dialog.Content>
       </Dialog.Portal>

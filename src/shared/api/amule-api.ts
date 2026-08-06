@@ -266,7 +266,12 @@ export const api = {
     request("/shared/reload", z.object({ ok: z.literal(true) }).passthrough(), { method: "POST" }),
   patchSharedFile: (
     hash: string,
-    patch: { priority?: "very_low" | "low" | "normal" | "high" | "release" | "auto" },
+    patch: {
+      priority?: "very_low" | "low" | "normal" | "high" | "release" | "auto";
+      name?: string;
+      comment?: string;
+      rating?: number;
+    },
   ) =>
     request(`/shared/${hash}`, sharedFileSchema, {
       method: "PATCH",

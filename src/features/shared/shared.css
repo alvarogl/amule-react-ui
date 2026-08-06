@@ -39,3 +39,38 @@
   margin: 0;
   overflow-wrap: anywhere;
 }
+.shared-metadata-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 18px;
+}
+.shared-metadata-form label {
+  display: grid;
+  gap: 5px;
+  color: #91a4b8;
+  font-size: 12px;
+}
+.shared-metadata-form select {
+  min-height: 40px;
+  border: 1px solid #395066;
+  border-radius: 7px;
+  padding: 0 10px;
+  background: #0b1017;
+  color: #d7e1ed;
+}
+.shared-metadata-form .shared-comment {
+  grid-column: 1 / -1;
+}
+.shared-metadata-form .shared-comment + button {
+  grid-column: 2;
+}
+@media (max-width: 560px) {
+  .shared-metadata-form {
+    grid-template-columns: 1fr;
+  }
+  .shared-metadata-form .shared-comment + button {
+    grid-column: auto;
+  }
+}
