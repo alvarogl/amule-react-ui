@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("covers session protection, transfer deletion, and search cleanup", async ({ page }) => {
+test("covers core session and mutation workflows", async ({ page }) => {
   let authenticated = false;
   let expireNextStatus = false;
   const download = {
@@ -19,6 +19,8 @@ test("covers session protection, transfer deletion, and search cleanup", async (
   let deletedHash: string | undefined;
   let searches: Array<{ search_id: number; query: string; kind: "global"; state: string }> = [];
   let stoppedSearch: unknown;
+  let addedServer: unknown;
+  let createdCategory: unknown;
   await page.route("**/api/v0/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -78,6 +80,9 @@ test("covers session protection, transfer deletion, and search cleanup", async (
       stoppedSearch = request.postDataJSON();
       searches = [];
       await json({ ok: true });
+    } else if (url.pathname.endsWith("/servers") && request.method() === "POST") {
+      addedServer = request.postDataJSON();
+      await json({ ok: true });
     } else if (url.pathname.endsWith("/servers")) {
       await json({ servers: [] });
     } else if (url.pathname.endsWith("/shared/directories")) {
@@ -115,6 +120,9 @@ test("covers session protection, transfer deletion, and search cleanup", async (
       await json({ admin_set: true, guest_enabled: false });
     } else if (url.pathname.endsWith("/clients")) {
       await json({ clients: [] });
+    } else if (url.pathname.endsWith("/categories") && request.method() === "POST") {
+      createdCategory = request.postDataJSON();
+      await json({ index: 1, name: "Images" });
     } else if (url.pathname.endsWith("/categories")) {
       await json({ categories: [] });
     } else if (url.pathname.endsWith("/version")) {
@@ -159,9 +167,24 @@ test("covers session protection, transfer deletion, and search cleanup", async (
   await expect.poll(() => stoppedSearch).toEqual({ search_id: 7, close: true });
   await expect(page.getByRole("button", { name: "Close example" })).not.toBeVisible();
 
+  await page.locator("nav").getByRole("button", { name: "Servers" }).click();
+  await page.getByPlaceholder("IP:port").fill("198.51.100.10:4661");
+  await page.getByPlaceholder("Optional server name").fill("Test server");
+  await page.getByRole("button", { name: "Add server" }).click();
+  await expect
+    .poll(() => addedServer)
+    .toEqual({
+      address: "198.51.100.10:4661",
+      name: "Test server",
+    });
+
+  await page.locator("nav").getByRole("button", { name: "Categories" }).click();
+  await page.getByPlaceholder("Category name").fill("Images");
+  await page.getByPlaceholder("Optional download path").fill("/downloads/images");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect.poll(() => createdCategory).toEqual({ name: "Images", path: "/downloads/images" });
+
   for (const [navigation, heading] of [
-    ["Servers", "Servers & network"],
-    ["Categories", "Categories"],
     ["Shared", "Shared files"],
     ["Kad", "Kad network"],
     ["Logs", "Logs"],
