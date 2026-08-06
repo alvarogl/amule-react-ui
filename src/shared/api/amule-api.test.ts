@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { downloadsSchema, statusSchema } from "./amule-api";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { unauthorizedEvent } from "@/shared/auth/unauthorized";
+import { api, downloadsSchema, statusSchema } from "./amule-api";
+
+afterEach(() => vi.unstubAllGlobals());
 describe("aMule schemas", () => {
   it("accepts the status contract", () =>
     expect(
@@ -13,4 +16,24 @@ describe("aMule schemas", () => {
     ).toBe(false));
   it("rejects a malformed download response", () =>
     expect(() => downloadsSchema.parse({ downloads: [{ hash: 1 }] })).toThrow());
+});
+
+describe("api authentication", () => {
+  it("notifies the session boundary when a request is unauthorized", async () => {
+    const listener = vi.fn();
+    window.addEventListener(unauthorizedEvent, listener);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: { code: "unauthorized", message: "Expired" } }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+
+    await expect(api.status()).rejects.toThrow("Expired");
+    expect(listener).toHaveBeenCalledTimes(1);
+    window.removeEventListener(unauthorizedEvent, listener);
+  });
 });

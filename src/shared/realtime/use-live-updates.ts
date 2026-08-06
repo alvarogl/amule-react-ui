@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@/features/auth/session-context";
-import { uiConfig } from "@/shared/config/ui-config";
 import { queryKeys } from "@/shared/api/query-keys";
+import { api } from "@/shared/api/amule-api";
+import { uiConfig } from "@/shared/config/ui-config";
 
 const snapshots = [
   queryKeys.status,
@@ -14,12 +15,17 @@ const snapshots = [
 ];
 export function useLiveUpdates() {
   const queryClient = useQueryClient();
-  const { authenticated, expire } = useSession();
+  const { authenticated } = useSession();
+  const hasConnected = useRef(false);
   useEffect(() => {
     if (!authenticated) return;
     const stream = new EventSource(uiConfig.eventsUrl, { withCredentials: true });
     const refresh = () =>
       snapshots.forEach((key) => void queryClient.invalidateQueries({ queryKey: key }));
+    stream.onopen = () => {
+      if (hasConnected.current) refresh();
+      hasConnected.current = true;
+    };
     [
       "resync",
       "status_changed",
@@ -37,15 +43,11 @@ export function useLiveUpdates() {
       }),
     );
     stream.onerror = () => {
-      void fetch(`${uiConfig.apiBase}/auth/session`, { credentials: "include" })
-        .then((r) => {
-          if (r.status === 401) {
-            stream.close();
-            expire();
-          }
-        })
-        .catch(() => undefined);
+      void api.session().catch(() => undefined);
     };
-    return () => stream.close();
-  }, [authenticated, expire, queryClient]);
+    return () => {
+      stream.close();
+      hasConnected.current = false;
+    };
+  }, [authenticated, queryClient]);
 }

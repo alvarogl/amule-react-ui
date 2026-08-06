@@ -7,6 +7,7 @@ import {
   type PropsWithChildren,
 } from "react";
 import { api } from "@/shared/api/amule-api";
+import { unauthorizedEvent } from "@/shared/auth/unauthorized";
 
 type Session = {
   ready: boolean;
@@ -25,6 +26,11 @@ export function SessionProvider({ children }: PropsWithChildren) {
       .then(() => setAuthenticated(true))
       .catch(() => setAuthenticated(false))
       .finally(() => setReady(true));
+  }, []);
+  useEffect(() => {
+    const handleUnauthorized = () => setAuthenticated(false);
+    window.addEventListener(unauthorizedEvent, handleUnauthorized);
+    return () => window.removeEventListener(unauthorizedEvent, handleUnauthorized);
   }, []);
   const value = useMemo<Session>(
     () => ({

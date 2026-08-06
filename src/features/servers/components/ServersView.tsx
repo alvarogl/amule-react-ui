@@ -7,6 +7,7 @@ import { SortableHeader } from "@/shared/components/SortableHeader";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { queryKeys } from "@/shared/api/query-keys";
 import { useSortState } from "@/shared/hooks/use-sort-state";
+import { getErrorMessage } from "@/shared/lib/errors";
 
 type ServerRow = Awaited<ReturnType<typeof api.servers>>["servers"][number];
 
@@ -32,7 +33,7 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
       toast.success("Server added.");
       refresh();
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const action = useMutation({
     mutationFn: ({ type, id }: { type: "connect" | "remove"; id: number }) =>
@@ -43,7 +44,7 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
       );
       refresh();
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const network = useMutation({
     mutationFn: ({
@@ -60,7 +61,7 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
       void client.invalidateQueries({ queryKey: queryKeys.status });
       refresh();
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const patch = useMutation({
     mutationFn: ({
@@ -78,7 +79,7 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
       );
       refresh();
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const update = useMutation({
     mutationFn: () => api.updateServers(serversUrl),
@@ -87,7 +88,7 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
       toast.success("Server-list refresh requested.");
       refresh();
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   function submit(event: FormEvent) {
     event.preventDefault();
