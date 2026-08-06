@@ -6,6 +6,7 @@ import {
   FolderTree,
   LayoutDashboard,
   LogOut,
+  MoreHorizontal,
   Pause,
   Play,
   Search,
@@ -161,6 +162,51 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       return toast.warning("Enter one or more valid ed2k:// links.");
     add.mutate(links);
   }
+  function transferActions(download: Download) {
+    if (download.status === "completed") {
+      return (
+        <button
+          className="icon"
+          disabled={clearOne.isPending}
+          aria-label={`Clear completed notification for ${download.name}`}
+          title="Clear completed notification (keeps Incoming file)"
+          onClick={() => clearOne.mutate(download.hash)}
+        >
+          <Check size={15} />
+        </button>
+      );
+    }
+    const nextAction = download.status === "paused" ? "resume" : "pause";
+    return (
+      <>
+        <button
+          className="icon"
+          aria-label={`${nextAction === "resume" ? "Resume" : "Pause"} ${download.name}`}
+          title={nextAction === "resume" ? "Resume download" : "Pause download"}
+          onClick={() => one.mutate({ hash: download.hash, status: nextAction })}
+        >
+          {nextAction === "resume" ? <Play size={15} /> : <Pause size={15} />}
+        </button>
+        <ConfirmDialog
+          trigger={
+            <button
+              className="icon danger"
+              disabled={remove.isPending}
+              aria-label={`Delete ${download.name}`}
+              title="Delete download"
+            >
+              <Trash2 size={15} />
+            </button>
+          }
+          title="Delete download?"
+          description={`“${download.name}” and its active download data will be permanently removed from disk.`}
+          actionLabel="Delete download"
+          dangerous
+          onConfirm={() => remove.mutate(download.hash)}
+        />
+      </>
+    );
+  }
   return (
     <section className="panel">
       <div className="panel-title">
@@ -296,7 +342,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
           <tbody>
             {orderedRows.map((d) => (
               <tr key={d.hash}>
-                <td className="actions-column actions-column--fixed">
+                <td>
                   <input
                     type="checkbox"
                     checked={selected.includes(d.hash)}
@@ -342,49 +388,14 @@ function Transfers({ downloads }: { downloads: Download[] }) {
                   )
                 </td>
                 <td>{formatRate(d.speed_bps)}</td>
-                <td>
-                  {d.status === "completed" ? (
-                    <button
-                      className="icon"
-                      disabled={clearOne.isPending}
-                      aria-label={`Clear completed notification for ${d.name}`}
-                      title="Clear completed notification (keeps Incoming file)"
-                      onClick={() => clearOne.mutate(d.hash)}
-                    >
-                      <Check size={15} />
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        className="icon"
-                        onClick={() =>
-                          one.mutate({
-                            hash: d.hash,
-                            status: d.status === "paused" ? "resume" : "pause",
-                          })
-                        }
-                      >
-                        {d.status === "paused" ? <Play size={15} /> : <Pause size={15} />}
-                      </button>
-                      <ConfirmDialog
-                        trigger={
-                          <button
-                            className="icon danger"
-                            disabled={remove.isPending}
-                            aria-label={`Delete ${d.name}`}
-                            title="Delete download"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        }
-                        title="Delete download?"
-                        description={`“${d.name}” and its active download data will be permanently removed from disk.`}
-                        actionLabel="Delete download"
-                        dangerous
-                        onConfirm={() => remove.mutate(d.hash)}
-                      />
-                    </>
-                  )}
+                <td className="actions-column actions-column--fixed">
+                  <div className="transfer-actions__inline">{transferActions(d)}</div>
+                  <details className="transfer-actions__menu">
+                    <summary className="icon" aria-label={`Actions for ${d.name}`} title="Actions">
+                      <MoreHorizontal size={16} />
+                    </summary>
+                    <div>{transferActions(d)}</div>
+                  </details>
                 </td>
               </tr>
             ))}
