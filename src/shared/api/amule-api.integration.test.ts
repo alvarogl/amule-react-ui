@@ -28,4 +28,35 @@ describe("aMule REST client integration", () => {
     });
     await expect(api.downloads()).resolves.toEqual({ downloads: [] });
   });
+
+  it("surfaces throttled update checks and rejected destructive operations", async () => {
+    server.use(
+      http.post("*/api/v0/version/check", () =>
+        HttpResponse.json(
+          { error: { code: "update_check_throttled", message: "Try again later" } },
+          { status: 429 },
+        ),
+      ),
+      http.delete("*/api/v0/downloads/completed", () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "completed_use_clear_completed",
+              message: "Clear completed notifications instead",
+            },
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    await expect(api.checkVersion()).rejects.toMatchObject({
+      status: 429,
+      message: "Try again later",
+    });
+    await expect(api.removeDownload("completed")).rejects.toMatchObject({
+      status: 409,
+      message: "Clear completed notifications instead",
+    });
+  });
 });
