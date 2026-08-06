@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { unauthorizedEvent } from "@/shared/auth/unauthorized";
-import { api, downloadsSchema, statusSchema } from "./amule-api";
+import { api, downloadsSchema, searchResultsSchema, statusSchema } from "./amule-api";
 
 afterEach(() => vi.unstubAllGlobals());
 describe("aMule schemas", () => {
@@ -16,6 +16,26 @@ describe("aMule schemas", () => {
     ).toBe(false));
   it("rejects a malformed download response", () =>
     expect(() => downloadsSchema.parse({ downloads: [{ hash: 1 }] })).toThrow());
+  it("accepts search ratings and Kad notes", () =>
+    expect(
+      searchResultsSchema.parse({
+        search_id: 1,
+        results: [
+          {
+            hash: "hash",
+            name: "file",
+            size: 1,
+            already_have: false,
+            sources: { total: 2, complete: 1 },
+            children: [],
+            rating: 4,
+            kad_comment_search_running: false,
+            comments: [{ username: "peer", filename: "file", rating: 5, comment: "Good" }],
+          },
+        ],
+        progress: { state: "finished", kind: "global", percent: 100 },
+      }).results[0].comments,
+    ).toHaveLength(1));
 });
 
 describe("api authentication", () => {

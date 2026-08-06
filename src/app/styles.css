@@ -4,11 +4,16 @@
   color: #d7e1ed;
   background: #0b1017;
 }
+:root[data-theme="light"] {
+  color: #182534;
+  background: #f4f7fb;
+}
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
+  background: inherit;
 }
 .loading,
 .login {
@@ -67,6 +72,79 @@ button:disabled {
 .shell {
   min-height: 100vh;
   background: #0b1017;
+}
+.query-error {
+  gap: 14px;
+  align-content: center;
+  color: #ff8895;
+}
+.query-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  color: #ff8895;
+}
+.theme-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #9db0c4;
+  font-size: 11px;
+}
+.theme-select select {
+  border: 1px solid #395066;
+  border-radius: 5px;
+  padding: 4px;
+  background: #0b1017;
+  color: #d7e1ed;
+}
+html[data-theme="light"] .shell,
+html[data-theme="light"] .search-form select,
+html[data-theme="light"] .search-filters select,
+html[data-theme="light"] .result-name,
+html[data-theme="light"] .server-select,
+html[data-theme="light"] .category-input,
+html[data-theme="light"] .theme-select select,
+html[data-theme="light"] input {
+  background: #fff;
+  color: #182534;
+}
+html[data-theme="light"] header {
+  background: #fff;
+  border-color: #cad6e2;
+}
+html[data-theme="light"] .panel,
+html[data-theme="light"] .metric,
+html[data-theme="light"] .login form,
+html[data-theme="light"] .confirm-dialog {
+  background: #fff;
+  border-color: #cad6e2;
+  color: #182534;
+}
+html[data-theme="light"] .panel-title,
+html[data-theme="light"] th,
+html[data-theme="light"] td {
+  border-color: #d8e1ea;
+}
+html[data-theme="light"] .subtle,
+html[data-theme="light"] .empty,
+html[data-theme="light"] .metric span,
+html[data-theme="light"] .panel-title span,
+html[data-theme="light"] .theme-select,
+html[data-theme="light"] .search-filters,
+html[data-theme="light"] .search-notes-list p {
+  color: #52677c;
+}
+html[data-theme="light"] .icon,
+html[data-theme="light"] .tab {
+  background: #e6eef6;
+  color: #182534;
+}
+html[data-theme="light"] .shell nav .active {
+  background: #d7f0fc;
+  color: #075d89;
 }
 header {
   height: 56px;

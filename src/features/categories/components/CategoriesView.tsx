@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { queryKeys } from "@/shared/api/query-keys";
 import { getErrorMessage } from "@/shared/lib/errors";
+import { QueryNotice } from "@/shared/components/QueryNotice";
 
 export function CategoriesView() {
   const [name, setName] = useState("");
@@ -73,7 +74,13 @@ export function CategoriesView() {
           <h2>Download categories</h2>
           <span>{customCategories.length}</span>
         </div>
-        {customCategories.length ? (
+        {categories.isPending || categories.isError ? (
+          <QueryNotice
+            loading={categories.isPending}
+            error={categories.error}
+            onRetry={() => void categories.refetch()}
+          />
+        ) : customCategories.length ? (
           <table>
             <thead>
               <tr>

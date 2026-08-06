@@ -28,6 +28,7 @@ import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { formatMebibytes, formatRate } from "@/shared/lib/formatters";
 import { useSortState } from "@/shared/hooks/use-sort-state";
 import { getErrorMessage } from "@/shared/lib/errors";
+import { ThemeSelect } from "@/shared/components/ThemeSelect";
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
 
@@ -499,7 +500,15 @@ export function DashboardPage() {
     queryFn: api.downloads,
   });
   useLiveUpdates();
-  if (!status.data) return <main className="loading">Connecting to aMule…</main>;
+  if (status.isPending) return <main className="loading">Connecting to aMule…</main>;
+  if (status.isError)
+    return (
+      <main className="loading query-error" role="alert">
+        <p>Unable to load aMule status: {getErrorMessage(status.error)}</p>
+        <button onClick={() => void status.refetch()}>Retry</button>
+      </main>
+    );
+  if (!status.data) return null;
   const s = status.data;
   const idState = s.ed2k.state !== "connected" ? "unknown" : s.ed2k.low_id ? "low" : "high";
   const navigation = [
@@ -550,6 +559,7 @@ export function DashboardPage() {
           <span className={`id-status ${idState}`}>
             {idState === "high" ? "HighID" : idState === "low" ? "LowID" : "ID unknown"}
           </span>
+          <ThemeSelect />
           <button className="icon" onClick={() => void logout()}>
             <LogOut size={16} />
           </button>
