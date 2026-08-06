@@ -7,16 +7,25 @@ import { queryKeys } from "@/shared/api/query-keys";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { QueryNotice } from "@/shared/components/QueryNotice";
 import { getErrorMessage } from "@/shared/lib/errors";
+import { formatLogLine } from "@/shared/lib/log-lines";
 
 type LogKind = "amule" | "serverinfo";
+const tailOptions = [50, 100, 250, 500] as const;
+const maxTail = tailOptions[tailOptions.length - 1];
 
 export function LogsView() {
   const [kind, setKind] = useState<LogKind>("amule");
+  const [tail, setTail] = useState<(typeof tailOptions)[number]>(100);
   const client = useQueryClient();
-  const amule = useQuery({ queryKey: queryKeys.amuleLog, queryFn: () => api.amuleLog() });
+  const amule = useQuery({
+    queryKey: queryKeys.amuleLog(tail),
+    queryFn: () => api.amuleLog(tail),
+    enabled: kind === "amule",
+  });
   const serverInfo = useQuery({
-    queryKey: queryKeys.serverInfoLog,
-    queryFn: () => api.serverInfoLog(),
+    queryKey: queryKeys.serverInfoLog(tail),
+    queryFn: () => api.serverInfoLog(tail),
+    enabled: kind === "serverinfo",
   });
   const clear = useMutation({
     mutationFn: (target: LogKind) =>
@@ -24,13 +33,15 @@ export function LogsView() {
     onSuccess: (_, target) => {
       toast.success(target === "amule" ? "aMule log cleared." : "Server-info log cleared.");
       void client.invalidateQueries({
-        queryKey: target === "amule" ? queryKeys.amuleLog : queryKeys.serverInfoLog,
+        queryKey: target === "amule" ? queryKeys.amuleLogs : queryKeys.serverInfoLogs,
       });
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
   const active = kind === "amule" ? amule : serverInfo;
-  const text = kind === "amule" ? amule.data?.lines.join("\n") : serverInfo.data?.text;
+  const lines = (kind === "amule" ? amule.data?.lines : serverInfo.data?.text.split("\n"))
+    ?.filter(Boolean)
+    .slice(-maxTail);
   const count = kind === "amule" ? amule.data?.total_cached : serverInfo.data?.returned_bytes;
   return (
     <div className="content">
@@ -62,6 +73,19 @@ export function LogsView() {
             <span>
               {count?.toLocaleString() ?? 0} {kind === "amule" ? "cached lines" : "bytes"}
             </span>
+            <label className="log-tail">
+              Tail
+              <select
+                value={tail}
+                onChange={(event) => setTail(Number(event.target.value) as typeof tail)}
+              >
+                {tailOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option} lines
+                  </option>
+                ))}
+              </select>
+            </label>
             <ConfirmDialog
               trigger={
                 <button className="icon danger" aria-label="Clear active log" title="Clear log">
@@ -82,10 +106,19 @@ export function LogsView() {
             error={active.error}
             onRetry={() => void active.refetch()}
           />
-        ) : text ? (
-          <pre className="log-output" aria-live="polite">
-            {text}
-          </pre>
+        ) : lines?.length ? (
+          <ol className="log-output" aria-live="polite">
+            {lines.map((line, index) => {
+              const formatted = formatLogLine(line);
+              return (
+                <li className={`log-line log-line--${formatted.tone}`} key={`${line}-${index}`}>
+                  <span className="log-line-number">{index + 1}</span>
+                  {formatted.timestamp && <time>{formatted.timestamp}</time>}
+                  <span>{formatted.message}</span>
+                </li>
+              );
+            })}
+          </ol>
         ) : (
           <p className="empty">No entries in this log buffer.</p>
         )}
