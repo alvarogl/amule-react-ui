@@ -78,6 +78,41 @@ test("covers session protection, transfer deletion, and search cleanup", async (
       stoppedSearch = request.postDataJSON();
       searches = [];
       await json({ ok: true });
+    } else if (url.pathname.endsWith("/servers")) {
+      await json({ servers: [] });
+    } else if (url.pathname.endsWith("/shared/directories")) {
+      await json({ directories: [] });
+    } else if (url.pathname.endsWith("/shared")) {
+      await json({ shared: [] });
+    } else if (url.pathname.endsWith("/kad")) {
+      await json({
+        state: "connected",
+        firewalled: false,
+        firewalled_udp: false,
+        in_lan_mode: false,
+        ip: "192.0.2.1",
+        network: { users: 1, files: 2, nodes: 3 },
+        indexed: { sources: 4, keywords: 5, notes: 6, load: 7 },
+      });
+    } else if (url.pathname.endsWith("/logs/amule")) {
+      await json({ lines: [], total_cached: 0, returned: 0 });
+    } else if (url.pathname.endsWith("/logs/serverinfo")) {
+      await json({ text: "", total_bytes: 0, returned_bytes: 0 });
+    } else if (url.pathname.endsWith("/stats/tree")) {
+      await json({ nodes: [] });
+    } else if (url.pathname.includes("/stats/graphs/")) {
+      const graph = url.pathname.split("/").at(-1);
+      await json({
+        graph,
+        unit: graph === "connections" || graph === "kad" ? "count" : "bps",
+        interval_seconds: 1,
+        points: [],
+        session: { download_bytes: 0, upload_bytes: 0, kad_bytes: 0 },
+      });
+    } else if (url.pathname.endsWith("/preferences")) {
+      await json({ general: { nickname: "Test node" } });
+    } else if (url.pathname.endsWith("/auth/passwords")) {
+      await json({ admin_set: true, guest_enabled: false });
     } else if (url.pathname.endsWith("/clients")) {
       await json({ clients: [] });
     } else if (url.pathname.endsWith("/categories")) {
@@ -123,6 +158,20 @@ test("covers session protection, transfer deletion, and search cleanup", async (
   await page.getByRole("button", { name: "Close example" }).click();
   await expect.poll(() => stoppedSearch).toEqual({ search_id: 7, close: true });
   await expect(page.getByRole("button", { name: "Close example" })).not.toBeVisible();
+
+  for (const [navigation, heading] of [
+    ["Servers", "Servers & network"],
+    ["Categories", "Categories"],
+    ["Shared", "Shared files"],
+    ["Kad", "Kad network"],
+    ["Logs", "Logs"],
+    ["Statistics", "Statistics"],
+    ["Peers", "Peers"],
+    ["Preferences", "Preferences"],
+  ]) {
+    await page.locator("nav").getByRole("button", { name: navigation }).click();
+    await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+  }
 
   expireNextStatus = true;
   await page.reload();
