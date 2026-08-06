@@ -5,6 +5,7 @@ import { api } from "@/shared/api/amule-api";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { queryKeys } from "@/shared/api/query-keys";
+import { getErrorMessage } from "@/shared/lib/errors";
 
 export function CategoriesView() {
   const [name, setName] = useState("");
@@ -26,7 +27,7 @@ export function CategoriesView() {
       toast.success("Category created.");
       refresh();
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const save = useMutation({
     mutationFn: ({ index, patch }: { index: number; patch: { name: string; path: string } }) =>
@@ -40,7 +41,7 @@ export function CategoriesView() {
       toast.success("Category saved.");
       refresh();
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const remove = useMutation({
     mutationFn: api.removeCategory,
@@ -48,7 +49,7 @@ export function CategoriesView() {
       toast.success("Category removed.");
       refresh();
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   function submit(event: FormEvent) {
     event.preventDefault();

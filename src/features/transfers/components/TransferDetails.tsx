@@ -2,22 +2,24 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { api } from "@/shared/api/amule-api";
+import { queryKeys } from "@/shared/api/query-keys";
+import { formatMebibytes } from "@/shared/lib/formatters";
 
 export function TransferDetails({ hash, name }: { hash: string; name: string }) {
   const detail = useQuery({
-    queryKey: ["download", hash],
+    queryKey: queryKeys.download(hash),
     queryFn: () => api.downloadDetail(hash),
   });
   const names = useQuery({
-    queryKey: ["download-filenames", hash],
+    queryKey: queryKeys.downloadFilenames(hash),
     queryFn: () => api.downloadFilenames(hash),
   });
   const comments = useQuery({
-    queryKey: ["download-comments", hash],
+    queryKey: queryKeys.downloadComments(hash),
     queryFn: () => api.downloadComments(hash),
   });
   const a4af = useQuery({
-    queryKey: ["download-a4af", hash],
+    queryKey: queryKeys.downloadA4af(hash),
     queryFn: () => api.downloadA4af(hash),
   });
   const data = detail.data;
@@ -40,8 +42,7 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
           ) : (
             <>
               <p className="subtle">
-                {data.status} ·{" "}
-                {data.size ? `${(data.size / 1024 / 1024).toFixed(1)} MiB` : "Size unavailable"}
+                {data.status} · {data.size ? formatMebibytes(data.size) : "Size unavailable"}
               </p>
               <h3>Alternate filenames</h3>
               <ul>

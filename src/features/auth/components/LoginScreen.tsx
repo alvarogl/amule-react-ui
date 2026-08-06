@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Activity } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/features/auth/session-context";
+import { getErrorMessage } from "@/shared/lib/errors";
 
 export function LoginScreen() {
   const { login } = useSession();
@@ -13,7 +14,7 @@ export function LoginScreen() {
     try {
       await login(password);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Login failed");
+      toast.error(getErrorMessage(error, "Login failed"));
     }
   }
 

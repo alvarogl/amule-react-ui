@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { uiConfig } from "@/shared/config/ui-config";
+import { notifyUnauthorized } from "@/shared/auth/unauthorized";
 
 const errorSchema = z.object({
   error: z.object({ code: z.string(), message: z.string() }),
@@ -140,6 +141,7 @@ async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit
   });
   const json: unknown = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status === 401) notifyUnauthorized();
     const parsed = errorSchema.safeParse(json);
     throw new ApiError(
       response.status,

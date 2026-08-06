@@ -26,20 +26,6 @@
   background: #0b1017;
   color: #d7e1ed;
 }
-.static-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #9db0c4;
-  white-space: nowrap;
-  font-size: 13px;
-}
-.static-toggle input {
-  width: 15px;
-  height: 15px;
-  padding: 0;
-  accent-color: #25a7db;
-}
 .danger {
   color: #ff98a1;
 }

@@ -27,6 +27,7 @@ import { SortableHeader } from "@/shared/components/SortableHeader";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { formatMebibytes, formatRate } from "@/shared/lib/formatters";
 import { useSortState } from "@/shared/hooks/use-sort-state";
+import { getErrorMessage } from "@/shared/lib/errors";
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
 
@@ -58,7 +59,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       refresh();
       toast.success(`Transfer ${variables.status === "pause" ? "paused" : "resumed"}.`);
     },
-    onError: (e) => toast.error(e.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const bulk = useMutation({
     mutationFn: (patch: {
@@ -74,7 +75,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
           : `Selected transfers ${patch.status === "paused" ? "paused" : "resumed"}.`,
       );
     },
-    onError: (e) => toast.error(e.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const category = useMutation({
     mutationFn: ({ hash, index }: { hash: string; index: number }) =>
@@ -83,7 +84,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       refresh();
       toast.success("Transfer category updated.");
     },
-    onError: (e) => toast.error(e.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const add = useMutation({
     mutationFn: (links: string[]) => api.addLinks(links),
@@ -92,7 +93,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       setLink("");
       toast.success(`${links.length} ed2k link${links.length === 1 ? "" : "s"} added.`);
     },
-    onError: (e) => toast.error(e.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const clear = useMutation({
     mutationFn: () => api.clearCompleted(),
@@ -102,7 +103,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
         `Cleared ${v.cleared} completed notification${v.cleared === 1 ? "" : "s"}. Files remain in Incoming.`,
       );
     },
-    onError: (e) => toast.error(e.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const clearOne = useMutation({
     mutationFn: api.clearCompleted,
@@ -110,7 +111,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       refresh();
       toast.success("Completed download notification cleared. The Incoming file was kept.");
     },
-    onError: (e) => toast.error(e.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const remove = useMutation({
     mutationFn: api.removeDownload,
@@ -119,7 +120,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       setSelected((current) => current.filter((selectedHash) => selectedHash !== hash));
       toast.success("Download deleted.");
     },
-    onError: (e) => toast.error(e.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const removeSelected = useMutation({
     mutationFn: api.removeDownloads,
@@ -132,7 +133,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       if (failed)
         toast.warning(`${failed} selected item${failed === 1 ? " was" : "s were"} not deleted.`);
     },
-    onError: (e) => toast.error(e.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const rows = downloads.filter((d) => d.name.toLowerCase().includes(filter.toLowerCase()));
   const orderedRows = [...rows].sort((left, right) => {

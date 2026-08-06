@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { SortableHeader } from "@/shared/components/SortableHeader";
 import { queryKeys } from "@/shared/api/query-keys";
 import { useSortState } from "@/shared/hooks/use-sort-state";
+import { getErrorMessage } from "@/shared/lib/errors";
 
 const fileTypes = [
   "any",
@@ -52,7 +53,7 @@ export function SearchView() {
       setActive(data.search_id);
       void queryClient.invalidateQueries({ queryKey: queryKeys.searches });
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const download = useMutation({
     mutationFn: ({ hash, ecid }: { hash: string; ecid?: number }) =>
@@ -61,7 +62,7 @@ export function SearchView() {
       toast.success("Search result added to transfers.");
       void queryClient.invalidateQueries({ queryKey: queryKeys.downloads });
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   const close = useMutation({
     mutationFn: (searchId: number) => api.stopSearch(searchId),
@@ -84,7 +85,7 @@ export function SearchView() {
         return next;
       });
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => toast.error(getErrorMessage(error)),
   });
   useEffect(() => {
     if (isActiveSearchFinished) input.current?.focus();

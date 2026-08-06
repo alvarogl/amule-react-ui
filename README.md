@@ -10,6 +10,36 @@ The application provides authenticated live status, download and upload activity
 - Node.js and pnpm.
 - An `amuleapi` admin password configured on the target aMule instance.
 
+## Runtime architecture
+
+There is no custom backend or separate production Node server. The running stack is:
+
+```text
+browser → amuleapi (static files, REST, SSE) ← amuled (aMule core)
+```
+
+`amuled` starts the native `amuleapi` process. `amuleapi` serves this project's built `dist/` directory at `/`, while its own handlers serve `/api/v0/*` and `/api/v0/events`. This same-origin arrangement keeps the HttpOnly session cookie, REST requests, and live SSE updates together.
+
+The legacy `amuleweb` service is independent of this SPA and can remain available as a fallback.
+
+## Run the stack
+
+Build the UI and point `amuleapi` at its absolute output directory:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+```
+
+In `amuleapi.conf`, configure `StaticRoot` with the absolute path to `dist/`. Ensure the `[AmuleApi]` section in the aMule configuration enables the API and points `Path` at the native `amuleapi` executable. Then start the aMule services using the unit names installed on the host, for example:
+
+```bash
+sudo systemctl enable --now amuled.service amuleweb.service
+sudo systemctl status amuled.service amuleweb.service
+```
+
+Do not stop `amuled` when you only want to run the UI differently: it owns the core and its `amuleapi` child. To use the development UI, leave that stack running and start Vite separately.
+
 ## Local development
 
 ```bash
@@ -19,7 +49,7 @@ cp .env.example .env
 pnpm dev
 ```
 
-The Vite development server proxies `/api` and `/flags` to `VITE_DEV_API_ORIGIN` (by default `http://127.0.0.1:4713`). Sign in with the `amuleapi` admin password; do not add it to `.env`.
+Vite prints its local URL when it starts. It proxies `/api` and `/flags` to `VITE_DEV_API_ORIGIN` (by default `http://127.0.0.1:4713`); set that value to the reachable `amuleapi` listener for the development host. Sign in with the `amuleapi` admin password; do not add it to `.env`.
 
 ## Configuration
 
@@ -31,7 +61,7 @@ Copy `.env.example` to `.env` to override local values. `.env` is intentionally 
 | `VITE_EVENTS_URL`     | `/api/v0/events`        | Browser SSE endpoint.                                                   |
 | `VITE_DEV_API_ORIGIN` | `http://127.0.0.1:4713` | Vite development proxy target.                                          |
 
-For the deployed SPA, keep the browser paths relative and configure `amuleapi` to serve the generated `dist/` directory as its static root. This keeps the UI, cookie, REST API, and SSE stream on one origin.
+For the deployed SPA, keep browser paths relative and configure `amuleapi` to serve the generated `dist/` directory as its static root. This keeps the UI, cookie, REST API, and SSE stream on one origin.
 
 ## Build and deploy
 
@@ -39,7 +69,7 @@ For the deployed SPA, keep the browser paths relative and configure `amuleapi` t
 pnpm build
 ```
 
-Point `amuleapi`'s `StaticRoot` setting to this project's `dist/` directory, then restart the aMule service. The production bundle is static; Vite's proxy only applies to `pnpm dev`.
+The production bundle is static; Vite's proxy only applies to `pnpm dev`. Rebuild after UI changes. If the configured static-root path changes, restart `amuled` so it starts `amuleapi` with the new configuration.
 
 For LAN access, follow the aMule project's network/security guidance and restrict the API listener and firewall rules to the intended network. Put TLS in front of `amuleapi` before exposing it beyond a trusted local network.
 
