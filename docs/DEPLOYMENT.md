@@ -59,8 +59,35 @@ roll back, point `StaticRoot` back to that retained directory and restart
 `amuled`, or restore the previous bundle at the same path. Do not run two
 aMule cores to test a UI update.
 
-Milestone 4 will add a repeatable installer/release bundle; until then this
-manual path is the supported upgrade procedure.
+For repeatable installs, use the repository helper. It stages and validates
+the bundle, moves the previous static root to a timestamped rollback directory,
+and never restarts a service:
+
+```bash
+scripts/install-static-ui.sh --dry-run --static-root /srv/amule-react-ui
+scripts/install-static-ui.sh --static-root /srv/amule-react-ui
+```
+
+Pass configuration paths only when the helper should patch their relevant
+settings. It updates `[AmuleApi]` (`Enabled`, `BindAddress`, `HttpPort`) and
+`[Server]` (`BindAddress`, `Port`, `StaticRoot`) while preserving every other
+setting and never writing credentials:
+
+```bash
+scripts/install-static-ui.sh --static-root /srv/amule-react-ui \
+  --amule-conf /path/to/amule.conf \
+  --amuleapi-conf /path/to/amuleapi.conf \
+  --bind-address 127.0.0.1 --http-port 4713
+```
+
+The helper prints the rollback directory. Restore it with:
+
+```bash
+scripts/install-static-ui.sh --rollback /path/to/rollback-directory
+```
+
+Run `pnpm test:deployment` to exercise this flow in an isolated temporary
+directory. It is safe to run locally and in CI; it never contacts a daemon.
 
 ## Development configuration
 

@@ -15,6 +15,7 @@ Before opening a pull request, run:
 pnpm format:check
 pnpm lint
 pnpm test
+pnpm test:deployment
 pnpm build
 ```
 

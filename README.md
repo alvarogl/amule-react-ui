@@ -78,6 +78,28 @@ The production bundle is static; Vite's proxy only applies to `pnpm dev`. Rebuil
 
 For LAN access, restrict the API listener and firewall rules to the intended network. Put TLS in front of `amuleapi` before exposing it beyond a trusted local network; the deployment guide explains why the static UI and same-origin API must be secured together.
 
+### Repeatable install and rollback
+
+The deployment helper stages a built bundle, retains the previous static root,
+and does not restart services. Preview its work first:
+
+```bash
+scripts/install-static-ui.sh --dry-run --static-root /absolute/path/to/static-root
+```
+
+To install, optionally pass the explicit aMule configuration files to patch
+only their API startup/server settings. The helper never writes credentials or
+replaces either complete configuration file:
+
+```bash
+scripts/install-static-ui.sh --static-root /absolute/path/to/static-root \
+  --amule-conf /absolute/path/to/amule.conf \
+  --amuleapi-conf /absolute/path/to/amuleapi.conf
+```
+
+It prints a rollback directory. Restore it with
+`scripts/install-static-ui.sh --rollback /path/to/rollback-directory`.
+
 ## Quality checks
 
 ```bash
@@ -85,6 +107,7 @@ pnpm exec prettier --write . --ignore-unknown
 pnpm format:check
 pnpm lint
 pnpm test
+pnpm test:deployment
 pnpm build
 ```
 
