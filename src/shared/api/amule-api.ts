@@ -216,22 +216,51 @@ const sharedDirectoryMutationSchema = z
     rejected: z.array(z.object({ path: z.string(), reason: z.string() })).default([]),
   })
   .passthrough();
-export const clientsSchema = z.object({
-  clients: z.array(
-    z
+export const clientSchema = z
+  .object({
+    client_ecid: z.number(),
+    client_name: z.string(),
+    ip: z.string(),
+    software: z.string(),
+    software_version: z.string(),
+    upload_state: z.string(),
+    download_state: z.string().optional(),
+    upload_file_name: z.string(),
+    download_file_name: z.string().optional(),
+    upload_speed_bps: z.number(),
+    download_speed_bps: z.number().optional(),
+    country_code: z.string().optional(),
+    port: z.number().optional(),
+    os_info: z.string().optional(),
+    ident_state: z.string().optional(),
+    obfuscation_status: z.string().optional(),
+    queue_waiting_position: z.number().optional(),
+    remote_queue_rank: z.number().optional(),
+    score: z.number().optional(),
+    high_id: z.boolean().optional(),
+    server_name: z.string().optional(),
+    server_ip: z.string().optional(),
+    server_port: z.number().optional(),
+    kad_port: z.number().optional(),
+    source_origin: z.string().optional(),
+    available_parts: z.number().optional(),
+    mod_version: z.string().optional(),
+    view_shared_disabled: z.boolean().optional(),
+    is_friend: z.boolean().optional(),
+    friend_slot: z.boolean().optional(),
+    dl_up_modifier: z.number().optional(),
+    part_progress_percent: z.number().optional(),
+    xfer: z
       .object({
-        client_ecid: z.number(),
-        client_name: z.string(),
-        ip: z.string(),
-        software: z.string(),
-        software_version: z.string(),
-        upload_state: z.string(),
-        upload_file_name: z.string(),
-        upload_speed_bps: z.number(),
+        up_session: z.number(),
+        down_session: z.number(),
+        up_total: z.number(),
+        down_total: z.number(),
       })
-      .passthrough(),
-  ),
-});
+      .optional(),
+  })
+  .passthrough();
+export const clientsSchema = z.object({ clients: z.array(clientSchema) });
 export const loginSchema = z.object({
   role: z.literal("admin"),
   expires_at: z.string(),
@@ -246,6 +275,7 @@ export type Status = z.infer<typeof statusSchema>;
 export type Download = z.infer<typeof downloadSchema>;
 export type SearchResult = z.infer<typeof searchResultsSchema>["results"][number];
 export type SharedFile = z.infer<typeof sharedFileSchema>;
+export type Client = z.infer<typeof clientSchema>;
 export type SearchFilters = {
   file_type?: string;
   extension?: string;
@@ -317,6 +347,17 @@ export const api = {
       method: "POST",
     }),
   servers: () => request("/servers", serversSchema),
+  clients: (filter: "uploads" | "downloads" | "active" | "all" = "all") =>
+    request(filter === "all" ? "/clients" : `/clients?filter=${filter}`, clientsSchema),
+  client: (ecid: number) => request(`/clients/${ecid}`, clientSchema),
+  browseClientSharedFiles: (ecid: number) =>
+    request(
+      `/clients/${ecid}/shared_files`,
+      z.object({ ok: z.literal(true), search_id: z.number() }),
+      {
+        method: "POST",
+      },
+    ),
   uploadClients: () => request("/clients?filter=uploads", clientsSchema),
   addServer: (address: string, name: string) =>
     request("/servers", z.object({ ok: z.literal(true) }).passthrough(), {

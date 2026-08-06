@@ -18,6 +18,7 @@ import {
   Share2,
   ShieldCheck,
   Trash2,
+  UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, type Download } from "@/shared/api/amule-api";
@@ -37,6 +38,7 @@ import { SharedFilesView } from "@/features/shared/components/SharedFilesView";
 import { KadView } from "@/features/kad/components/KadView";
 import { LogsView } from "@/features/logs/components/LogsView";
 import { PreferencesView } from "@/features/preferences/components/PreferencesView";
+import { PeersView } from "@/features/peers/components/PeersView";
 
 const StatisticsView = lazy(() =>
   import("@/features/statistics/components/StatisticsView").then(({ StatisticsView }) => ({
@@ -527,6 +529,7 @@ export function DashboardPage() {
     | "logs"
     | "statistics"
     | "preferences"
+    | "peers"
   >("dashboard");
   const status = useQuery({ queryKey: queryKeys.status, queryFn: api.status });
   const downloads = useQuery({
@@ -554,6 +557,7 @@ export function DashboardPage() {
     { id: "kad" as const, label: "Kad", icon: Network },
     { id: "logs" as const, label: "Logs", icon: ScrollText },
     { id: "statistics" as const, label: "Statistics", icon: ChartNoAxesCombined },
+    { id: "peers" as const, label: "Peers", icon: UsersRound },
   ];
   const body =
     view === "search" ? (
@@ -576,6 +580,8 @@ export function DashboardPage() {
       </Suspense>
     ) : view === "preferences" ? (
       <PreferencesView />
+    ) : view === "peers" ? (
+      <PeersView />
     ) : (
       <div className="content">
         <h1>Dashboard</h1>

@@ -3,6 +3,7 @@ import { unauthorizedEvent } from "@/shared/auth/unauthorized";
 import {
   api,
   amuleLogSchema,
+  clientsSchema,
   downloadsSchema,
   kadSchema,
   searchResultsSchema,
@@ -92,6 +93,25 @@ describe("aMule schemas", () => {
     expect(amuleLogSchema.parse({ lines: ["one"], total_cached: 2, returned: 1 }).lines).toEqual([
       "one",
     ]));
+  it("accepts a peer list entry with live transfer fields", () =>
+    expect(
+      clientsSchema.parse({
+        clients: [
+          {
+            client_ecid: 42,
+            client_name: "peer",
+            ip: "203.0.113.42",
+            software: "amule",
+            software_version: "2.3.3",
+            upload_state: "uploading",
+            upload_file_name: "file.iso",
+            upload_speed_bps: 10,
+            download_state: "idle",
+            download_speed_bps: 0,
+          },
+        ],
+      }).clients[0].client_ecid,
+    ).toBe(42));
   it("accepts typed statistics tree values and graph samples", () => {
     expect(
       statisticsTreeSchema.parse({
