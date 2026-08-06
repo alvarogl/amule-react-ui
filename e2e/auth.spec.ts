@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("protects the session and confirms destructive transfer deletion", async ({ page }) => {
+test("covers session protection, transfer deletion, and search cleanup", async ({ page }) => {
   let authenticated = false;
   let expireNextStatus = false;
   const download = {
@@ -17,6 +17,8 @@ test("protects the session and confirms destructive transfer deletion", async ({
   };
   let downloads = [download];
   let deletedHash: string | undefined;
+  let searches: Array<{ search_id: number; query: string; kind: "global"; state: string }> = [];
+  let stoppedSearch: unknown;
   await page.route("**/api/v0/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -60,6 +62,22 @@ test("protects the session and confirms destructive transfer deletion", async ({
       await json({ ok: true });
     } else if (url.pathname.endsWith("/downloads")) {
       await json({ downloads });
+    } else if (url.pathname.endsWith("/search") && request.method() === "POST") {
+      const body = request.postDataJSON() as { query: string; type: "global" };
+      searches = [{ search_id: 7, query: body.query, kind: body.type, state: "finished" }];
+      await json({ ok: true, search_id: 7, query: body.query });
+    } else if (url.pathname.endsWith("/search")) {
+      await json({ searches });
+    } else if (url.pathname.endsWith("/search/results")) {
+      await json({
+        search_id: 7,
+        results: [],
+        progress: { state: "finished", kind: "global", percent: 100 },
+      });
+    } else if (url.pathname.endsWith("/search/stop") && request.method() === "POST") {
+      stoppedSearch = request.postDataJSON();
+      searches = [];
+      await json({ ok: true });
     } else if (url.pathname.endsWith("/clients")) {
       await json({ clients: [] });
     } else if (url.pathname.endsWith("/categories")) {
@@ -97,6 +115,14 @@ test("protects the session and confirms destructive transfer deletion", async ({
   await page.getByRole("button", { name: "Delete download", exact: true }).click();
   await expect.poll(() => deletedHash).toBe(download.hash);
   await expect.poll(async () => page.locator(".transfer-table tbody tr").count()).toBe(0);
+
+  await page.getByRole("button", { name: "Search" }).click();
+  await page.getByPlaceholder("Find files").fill("example");
+  await page.locator(".search-form").getByRole("button", { name: "Search" }).click();
+  await expect(page.getByRole("button", { name: /example finished/ })).toBeVisible();
+  await page.getByRole("button", { name: "Close example" }).click();
+  await expect.poll(() => stoppedSearch).toEqual({ search_id: 7, close: true });
+  await expect(page.getByRole("button", { name: "Close example" })).not.toBeVisible();
 
   expireNextStatus = true;
   await page.reload();
