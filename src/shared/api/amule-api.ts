@@ -322,7 +322,10 @@ export class ApiError extends Error {
   }
 }
 async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${uiConfig.apiBase}${path}`, {
+  const url = uiConfig.apiBase.startsWith("http")
+    ? `${uiConfig.apiBase}${path}`
+    : new URL(`${uiConfig.apiBase}${path}`, window.location.origin).toString();
+  const response = await fetch(url, {
     credentials: "include",
     headers: { "Content-Type": "application/json", ...init?.headers },
     ...init,
