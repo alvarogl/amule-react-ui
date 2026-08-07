@@ -115,6 +115,14 @@ generic templates, documentation, and a release manifest. It deliberately
 excludes `.env`, credentials, runtime configuration, and dependencies. Verify
 the downloaded archive with `sha256sum --check release/*.sha256` before use.
 
+### Publish a GitHub Release
+
+The `Release` workflow is manual-only. From `main`, use **Actions → Release →
+Run workflow**, enter the exact version in `package.json`, and wait for its
+quality, deployment, browser, and archive checks to pass. It then creates tag
+`v<version>` and attaches the archive plus checksum to a generated GitHub
+Release. It does not deploy to any aMule host.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
