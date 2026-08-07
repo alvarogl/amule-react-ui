@@ -5,5 +5,7 @@ playwright-report/
 *.tsbuildinfo
 .env
 !.env.example
+docker.env
+secrets/
 PLAN.md
 release/

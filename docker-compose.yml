@@ -1,0 +1,39 @@
+services:
+  amule:
+    build:
+      context: .
+      args:
+        VERSION: ${AMULE_IMAGE_VERSION:-dev}
+    image: amule-console:${AMULE_IMAGE_VERSION:-local}
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      AMULE_TCP_PORT: ${AMULE_TCP_PORT:-4662}
+      AMULE_UDP_PORT: ${AMULE_UDP_PORT:-4672}
+      AMULE_ADMIN_PASSWORD_FILE: /run/secrets/amule_admin_password
+    ports:
+      - "${AMULE_UI_PORT:-4713}:4713/tcp"
+      - "${AMULE_TCP_PORT:-4662}:4662/tcp"
+      - "${AMULE_UDP_PORT:-4672}:4672/udp"
+    volumes:
+      - amule-config:/config
+      - amule-incoming:/incoming
+      - amule-temp:/temp
+    secrets:
+      - amule_admin_password
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:4713/api/v0/version"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+secrets:
+  amule_admin_password:
+    file: ${AMULE_ADMIN_PASSWORD_FILE:?Set AMULE_ADMIN_PASSWORD_FILE to a non-empty password file.}
+
+volumes:
+  amule-config:
+  amule-incoming:
+  amule-temp:

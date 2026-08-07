@@ -1,0 +1,107 @@
+name: Container
+
+"on":
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Build and smoke-test linux/amd64
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build runnable image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          platforms: linux/amd64
+          tags: amule-console:ci
+
+      - name: Verify missing first-boot secret fails safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          output=$(docker run --rm amule-console:ci 2>&1)
+          status=$?
+          set -e
+          test "$status" -eq 78
+          grep -F 'First boot requires a readable amule_admin_password Docker secret.' <<< "$output"
+
+      - name: Smoke test first boot and persistence
+        shell: bash
+        run: |
+          set -euo pipefail
+          work_dir=$(mktemp -d)
+          trap 'docker rm -f amule-smoke >/dev/null 2>&1 || true; rm -rf "$work_dir"' EXIT
+          admin_password=$(openssl rand -hex 32)
+          printf '%s' "$admin_password" > "$work_dir/admin-password"
+          chmod 600 "$work_dir/admin-password"
+          mkdir "$work_dir/config" "$work_dir/incoming" "$work_dir/temp"
+          docker run -d --name amule-smoke -p 127.0.0.1:14713:4713 \
+            -v "$work_dir/config:/config" -v "$work_dir/incoming:/incoming" -v "$work_dir/temp:/temp" \
+            -v "$work_dir/admin-password:/run/secrets/amule_admin_password:ro" \
+            amule-console:ci
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:14713/api/v0/version >/dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:14713/api/v0/version >/dev/null
+          curl --fail --silent http://127.0.0.1:14713/ | grep -q '<div id="root">'
+          printf '{"password":"%s"}' "$admin_password" | curl --fail --silent --show-error -c "$work_dir/cookies" \
+            -H 'Content-Type: application/json' \
+            --data-binary @- \
+            http://127.0.0.1:14713/api/v0/auth/login >/dev/null
+          unset admin_password
+          curl --fail --silent --show-error -b "$work_dir/cookies" \
+            http://127.0.0.1:14713/api/v0/status >/dev/null
+          set +e
+          curl --silent --show-error --no-buffer --max-time 2 \
+            http://127.0.0.1:14713/api/v0/events >/dev/null
+          stream_status=$?
+          set -e
+          test "$stream_status" -eq 0 -o "$stream_status" -eq 28
+          test -s "$work_dir/config/amule.conf"
+          test -s "$work_dir/config/amuleapi-passwords"
+          docker restart amule-smoke >/dev/null
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:14713/api/v0/version >/dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:14713/api/v0/version >/dev/null
+          test -d "$work_dir/incoming" && test -d "$work_dir/temp"
+
+  multiarch:
+    name: Verify linux/amd64 and linux/arm64 build
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build without publishing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: false
+          outputs: type=cacheonly
