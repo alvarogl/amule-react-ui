@@ -23,6 +23,15 @@ browser → amuleapi (static files, REST, SSE) ← amuled (aMule core)
 The legacy `amuleweb` service is independent of this SPA and is not required.
 Enable it only when an operator intentionally wants a temporary fallback.
 
+## Container deployment
+
+This repository also contains a source-built, multi-platform container image
+and a single-service Compose deployment. It runs `amuled` with its native
+`amuleapi` child and serves the bundled SPA without a Node.js runtime. See
+[docs/CONTAINER.md](docs/CONTAINER.md) for first-run Docker secret setup,
+volumes, firewall/HighID requirements, upgrades, password rotation, and
+reverse-proxy/TLS guidance.
+
 ## Run the stack
 
 Build the UI and point `amuleapi` at its absolute output directory:
