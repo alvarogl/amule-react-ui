@@ -13,17 +13,21 @@ Place tests next to covered code as `*.test.ts`. Keep `.env` local; document non
 ## Build, Test, and Development Commands
 
 ```bash
-pnpm install       # install locked dependencies
-pnpm dev           # start Vite and its local API proxy
-pnpm format:check  # validate Prettier formatting
-pnpm lint          # run ESLint on source and configuration
-pnpm test          # run Vitest once
-pnpm test:deployment # exercise the isolated deployment install/rollback flow
-pnpm test:release    # validate deterministic release archive and checksum
-pnpm build         # type-check and build dist/
+pnpm install           # install locked dependencies
+pnpm dev               # start Vite and its local API proxy
+pnpm format:check      # validate Prettier formatting
+pnpm lint              # run ESLint on source and configuration
+pnpm test              # run Vitest once
+pnpm test:deployment   # exercise the isolated deployment install/rollback flow
+pnpm test:e2e          # run Playwright; install Chromium first when needed
+pnpm build             # type-check and build dist/
+pnpm test:release      # validate deterministic release archive and checksum
 ```
 
-Run format, lint, test, and build before every PR. `amuleapi` serves production `dist/`; Vite proxy settings are development-only.
+Run format, lint, unit tests, deployment tests, browser tests, build, and
+release-package tests before every PR. `pnpm test:release` requires `dist/`,
+so run it after `pnpm build`. `amuleapi` serves production `dist/`; Vite proxy
+settings are development-only.
 
 ## Coding Style & Naming Conventions
 
@@ -31,7 +35,11 @@ Use strict TypeScript, functional components, named exports, and Prettier defaul
 
 ## Testing Guidelines
 
-Use Vitest for deterministic unit tests. Cover changed schemas, formatters, filters, mutations, and session/SSE edges. Name tests after the subject, for example `formatters.test.ts`; avoid live aMule dependencies.
+Use Vitest for deterministic unit tests and Playwright for mocked browser
+workflows. Cover changed schemas, formatters, filters, mutations, and
+session/SSE edges. Name unit tests after the subject, for example
+`formatters.test.ts`; avoid live aMule dependencies. Keep deployment and
+release-shell tests isolated in temporary directories.
 
 ## Commit & Pull Request Guidelines
 
@@ -40,6 +48,13 @@ Use focused Conventional Commit subjects: `feat:`, `fix:`, `refactor:`, `ci:`, `
 ## Security & Configuration
 
 Authentication is cookie-based; never persist passwords or tokens in browser storage. Keep production API paths relative and restrict LAN access with aMule/firewall settings.
+
+## Release and Deployment Boundaries
+
+Use `scripts/install-static-ui.sh --dry-run` before an operator deployment.
+The manual GitHub Release workflow runs only from `main`, validates the package
+version, and publishes verified assets; it must never add a deployment step or
+production credentials without explicit approval.
 
 ## Agent Feedback & Continuous Improvement
 
