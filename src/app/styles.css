@@ -26,8 +26,10 @@ body {
   display: grid;
   gap: 16px;
 }
-.login svg {
-  color: #4dd2ff;
+.login-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
 }
 .login h1 {
   margin: 0;
@@ -95,6 +97,15 @@ header > div {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.app-brand {
+  min-width: 0;
+}
+.app-logo {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 .live {
   font-size: 11px;

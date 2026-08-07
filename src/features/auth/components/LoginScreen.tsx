@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { Activity } from "lucide-react";
 import { toast } from "sonner";
+import amuleLogo from "@/assets/amule-logo.png";
 import { useSession } from "@/features/auth/session-context";
 import { getErrorMessage } from "@/shared/lib/errors";
 
@@ -21,7 +21,7 @@ export function LoginScreen() {
   return (
     <main className="login">
       <form onSubmit={submit}>
-        <Activity size={36} />
+        <img className="login-logo" src={amuleLogo} alt="aMule" />
         <h1>aMule Console</h1>
         <label>
           Admin password

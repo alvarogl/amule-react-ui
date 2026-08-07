@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Activity,
   ChartNoAxesCombined,
   Check,
   FolderTree,
@@ -22,6 +21,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
+import amuleLogo from "@/assets/amule-logo.png";
 import { api, type Download } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
 import { useSession } from "@/features/auth/session-context";
@@ -680,8 +680,8 @@ export function DashboardPage() {
   return (
     <main className="shell">
       <header>
-        <div>
-          <Activity />
+        <div className="app-brand">
+          <img className="app-logo" src={amuleLogo} alt="" />
           <strong>aMule Console</strong>
           <span className="live">LIVE</span>
         </div>
