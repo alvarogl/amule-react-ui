@@ -16,8 +16,15 @@ pnpm format:check
 pnpm lint
 pnpm test
 pnpm test:deployment
-pnpm test:release
+pnpm test:e2e
 pnpm build
+pnpm test:release
+```
+
+Install Chromium first when it is not already available:
+
+```bash
+pnpm exec playwright install --with-deps chromium
 ```
 
 ## Change guidelines
@@ -30,7 +37,7 @@ pnpm build
 
 ## Pull requests
 
-Use a focused branch and open a pull request targeting `main`. Fill in the pull-request template, keep commits coherent, and include a screenshot or short recording for material interface changes. The required CI check validates formatting, tests, and the production build.
+Use a focused branch and open a pull request targeting `main`. Fill in the pull-request template, keep commits coherent, and include a screenshot or short recording for material interface changes. Required checks validate formatting, linting, unit/integration tests, deployment/release packaging, and browser workflows.
 
 ## License
 

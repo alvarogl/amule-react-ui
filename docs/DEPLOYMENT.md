@@ -8,7 +8,8 @@ stack is:
 browser → amuleapi (static UI, REST, SSE) ← amuled
 ```
 
-`amuleweb` can remain enabled as a fallback while adopting this UI.
+`amuleweb` is optional and not required by this UI. Enable it only when an
+operator intentionally needs a temporary legacy fallback.
 
 ## Prerequisites
 
@@ -25,6 +26,21 @@ pnpm build
 
 Run `pnpm format:check && pnpm lint && pnpm test && pnpm test:e2e` before
 deploying a locally modified checkout. The output is `dist/`.
+
+## Use a release archive
+
+For a published release, download both the versioned `.tar.gz` archive and its
+`.sha256` file from GitHub Releases. Verify the archive before extracting it:
+
+```bash
+sha256sum --check amule-react-ui-v<VERSION>.tar.gz.sha256
+tar -xzf amule-react-ui-v<VERSION>.tar.gz
+cd amule-react-ui-v<VERSION>
+scripts/install-static-ui.sh --dry-run --static-root /srv/amule-react-ui
+```
+
+The archive already contains `dist/`, the installer, templates, deployment
+guide, and license. Node.js and pnpm are not needed for this installation path.
 
 ## Configure aMule and amuleapi
 
@@ -122,3 +138,5 @@ does not need it. For Internet exposure, terminate TLS and follow the upstream
 - **API does not start:** check that amuleapi is enabled in `amule.conf` and
   inspect the daemon/service logs; a non-loopback bind requires an admin
   password.
+- **Release archive check fails:** download the archive and checksum again,
+  then run `sha256sum --check` from the directory containing both files.

@@ -20,7 +20,8 @@ browser → amuleapi (static files, REST, SSE) ← amuled (aMule core)
 
 `amuled` starts the native `amuleapi` process. `amuleapi` serves this project's built `dist/` directory at `/`, while its own handlers serve `/api/v0/*` and `/api/v0/events`. This same-origin arrangement keeps the HttpOnly session cookie, REST requests, and live SSE updates together.
 
-The legacy `amuleweb` service is independent of this SPA and can remain available as a fallback.
+The legacy `amuleweb` service is independent of this SPA and is not required.
+Enable it only when an operator intentionally wants a temporary fallback.
 
 ## Run the stack
 
@@ -34,8 +35,8 @@ pnpm build
 In `amuleapi.conf`, configure `StaticRoot` with the absolute path to `dist/`. Ensure the `[AmuleApi]` section in the aMule configuration enables the API and points `Path` at the native `amuleapi` executable. Then start the aMule services using the unit names installed on the host, for example:
 
 ```bash
-sudo systemctl enable --now amuled.service amuleweb.service
-sudo systemctl status amuled.service amuleweb.service
+sudo systemctl enable --now amuled.service
+sudo systemctl status amuled.service
 ```
 
 Do not stop `amuled` when you only want to run the UI differently: it owns the core and its `amuleapi` child. To use the development UI, leave that stack running and start Vite separately.
@@ -115,6 +116,10 @@ generic templates, documentation, and a release manifest. It deliberately
 excludes `.env`, credentials, runtime configuration, and dependencies. Verify
 the downloaded archive with `sha256sum --check release/*.sha256` before use.
 
+Release-archive users can follow the archive-only install path in
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#use-a-release-archive); Node.js and
+pnpm are needed only when building from a checkout.
+
 ### Publish a GitHub Release
 
 The `Release` workflow is manual-only. From `main`, use **Actions → Release →
@@ -135,12 +140,16 @@ pnpm format:check
 pnpm lint
 pnpm test
 pnpm test:deployment
-pnpm test:release
+pnpm test:e2e
 pnpm build
+pnpm test:release
 ```
-
-`PLAN.md` is a local implementation log and is intentionally not tracked in Git.
 
 ## Continuous integration
 
-GitHub Actions runs formatting validation, ESLint, tests, and the production build on every pull request, pushes to `main`, and manual dispatches. It intentionally does not deploy anything; CD will be added separately. See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution and review workflow and [SECURITY.md](SECURITY.md) for responsible disclosure guidance.
+GitHub Actions runs formatting, ESLint, unit/integration tests, deployment and
+release-package checks, and a separate browser-test workflow for pull requests
+and pushes to `main`. The manual-only Release workflow publishes verified
+artifacts but never deploys to an aMule host. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the contribution and review workflow
+and [SECURITY.md](SECURITY.md) for responsible disclosure guidance.

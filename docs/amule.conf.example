@@ -4,4 +4,5 @@
 Enabled=1
 BindAddress=127.0.0.1
 HttpPort=4713
-
+; The default is "amuleapi". Use an absolute path when it is not on PATH.
+Path=amuleapi
