@@ -48,6 +48,8 @@ Use focused Conventional Commit subjects: `feat:`, `fix:`, `refactor:`, `ci:`, `
 ## Security & Configuration
 
 Authentication is cookie-based; never persist passwords or tokens in browser storage. Keep production API paths relative and restrict LAN access with aMule/firewall settings.
+Password recovery is an operator-side replacement workflow: do not add a
+client-side reset endpoint or imply that a stored password can be recovered.
 
 ## Release and Deployment Boundaries
 

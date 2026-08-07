@@ -196,6 +196,8 @@ test("covers core session and mutation workflows", async ({ page }) => {
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "aMule Console" })).toBeVisible();
+  await page.getByText("Forgot your password?").click();
+  await expect(page.getByText("Passwords cannot be recovered here.")).toBeVisible();
   await page.getByLabel("Admin password").fill("not-persisted");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();

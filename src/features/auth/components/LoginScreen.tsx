@@ -33,6 +33,14 @@ export function LoginScreen() {
           />
         </label>
         <button>Sign in</button>
+        <details className="login-help">
+          <summary>Forgot your password?</summary>
+          <p>
+            Passwords cannot be recovered here. On the aMule host, replace the API admin password in
+            Preferences → Remote Controls or with amuleapi's <code>--set-admin-pass</code> option.
+            Then sign in with the new password; no browser reset is required.
+          </p>
+        </details>
       </form>
     </main>
   );

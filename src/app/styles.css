@@ -46,6 +46,22 @@ body {
   gap: 7px;
   font-size: 14px;
 }
+.login-help {
+  color: #91a4b8;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.login-help summary {
+  cursor: pointer;
+  color: #b9d9eb;
+  font-weight: 600;
+}
+.login-help p {
+  margin: 8px 0 0;
+}
+.login-help code {
+  color: #d7e1ed;
+}
 input {
   padding: 11px;
   border-radius: 7px;
