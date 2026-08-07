@@ -81,7 +81,7 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           scripts/create-release-archive.sh --output-dir release --version "$RELEASE_VERSION"
-          sha256sum --check release/*.sha256
+          (cd release && sha256sum --check *.sha256)
 
       - name: Publish GitHub Release
         env:
