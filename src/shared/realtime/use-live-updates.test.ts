@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Download } from "@/shared/api/amule-api";
+import type { Client, Download, Status } from "@/shared/api/amule-api";
 import { liveEventTypes, subscribeToLiveUpdates } from "./use-live-updates";
 
 class FakeEventSource {
@@ -78,9 +78,39 @@ describe("live update subscription", () => {
 
     expect(liveEventTypes).toContain("download_updated");
     expect(setQueryData).toHaveBeenCalledWith(["downloads"], expect.any(Function));
+    expect(setQueryData).toHaveBeenCalledWith(["download", "download-1"], expect.anything());
     expect(getDownloads().downloads[0]?.size_done).toBe(25);
     expect(invalidateQueries).not.toHaveBeenCalledWith({ queryKey: ["downloads"] });
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["search-results"] });
+  });
+
+  it("applies dashboard status, queue, and upload payloads immediately", () => {
+    const { invalidateQueries, setQueryData, stream } = setup();
+    const status = {
+      ec_connected: true,
+      ed2k: { state: "connected", low_id: false, server_name: "Example server" },
+      kad: { state: "connected", firewalled: false },
+      speeds: { download_bps: 25, upload_bps: 10 },
+      queue: { upload_queue_length: 4, total_source_count: 12 },
+    } satisfies Status;
+    const client = {
+      client_ecid: 7,
+      client_name: "Peer",
+      ip: "192.0.2.1",
+      software: "emule",
+      software_version: "0.50a",
+      upload_state: "uploading",
+      upload_file_name: "example.iso",
+      upload_speed_bps: 10,
+    } satisfies Client;
+
+    stream.emit("status_changed", status);
+    stream.emit("client_updated", client);
+
+    expect(setQueryData).toHaveBeenCalledWith(["status"], status);
+    expect(setQueryData).toHaveBeenCalledWith(["clients", "uploads"], expect.any(Function));
+    expect(invalidateQueries).not.toHaveBeenCalledWith({ queryKey: ["status"] });
+    expect(invalidateQueries).not.toHaveBeenCalledWith({ queryKey: ["clients", "uploads"] });
   });
 
   it("refreshes snapshots after reconnect and probes the session on stream errors", () => {
