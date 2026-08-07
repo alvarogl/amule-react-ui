@@ -182,7 +182,7 @@ test("covers core session and mutation workflows", async ({ page }) => {
         amule_version: "3.0.1",
         daemon_version: "3.0.1",
         update: {
-          check_enabled: false,
+          check_enabled: true,
           checked: false,
           latest_version: "",
           update_available: null,
@@ -196,10 +196,13 @@ test("covers core session and mutation workflows", async ({ page }) => {
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "aMule Console" })).toBeVisible();
+  await page.getByText("Forgot your password?").click();
+  await expect(page.getByText("Passwords cannot be recovered here.")).toBeVisible();
   await page.getByLabel("Admin password").fill("not-persisted");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   await expect(page.getByText("Test server")).toBeVisible();
+  await expect(page.getByText("Software updates", { exact: true })).not.toBeVisible();
   await expect(page.evaluate(() => localStorage.length)).resolves.toBe(0);
   await expect(page.evaluate(() => sessionStorage.length)).resolves.toBe(0);
 
@@ -262,6 +265,7 @@ test("covers core session and mutation workflows", async ({ page }) => {
   await expect.poll(() => addedShareRoot).toEqual({ path: "/media/test", recursive: true });
 
   await page.locator("nav").getByRole("button", { name: "Preferences" }).click();
+  await expect(page.getByText("Software updates", { exact: true })).toBeVisible();
   await page.getByLabel("Nickname").fill("Updated node");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect.poll(() => savedPreferences).toEqual({ general: { nickname: "Updated node" } });

@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { KeyRound, RotateCcw, Save, ShieldAlert } from "lucide-react";
+import { KeyRound, RefreshCw, RotateCcw, Save, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
@@ -13,6 +13,67 @@ import {
 } from "@/features/preferences/preferences-validation";
 
 type Preferences = Record<string, unknown>;
+
+function VersionChecker() {
+  const client = useQueryClient();
+  const lastCheckedBeforeRequest = useRef<number | null>(null);
+  const [waitingForResult, setWaitingForResult] = useState(false);
+  const version = useQuery({
+    queryKey: queryKeys.version,
+    queryFn: api.version,
+    retry: false,
+    refetchInterval: waitingForResult ? 3_000 : false,
+  });
+  useEffect(() => {
+    const lastChecked = version.data?.update.last_checked;
+    if (
+      waitingForResult &&
+      lastChecked !== null &&
+      lastChecked !== undefined &&
+      lastChecked !== lastCheckedBeforeRequest.current
+    ) {
+      setWaitingForResult(false);
+      toast.success("Version check completed.");
+    }
+  }, [version.data?.update.last_checked, waitingForResult]);
+  const check = useMutation({
+    mutationFn: api.checkVersion,
+    onSuccess: () => {
+      lastCheckedBeforeRequest.current = version.data?.update.last_checked ?? null;
+      setWaitingForResult(true);
+      void client.invalidateQueries({ queryKey: queryKeys.version });
+    },
+    onError: (error) => {
+      setWaitingForResult(false);
+      toast.error(getErrorMessage(error));
+    },
+  });
+  if (!version.data?.update.check_enabled) return null;
+  const update = version.data.update;
+  const state = update.update_available
+    ? `Version ${update.latest_version} is available`
+    : update.checked
+      ? "aMule is up to date"
+      : "No version check has completed yet";
+  return (
+    <section
+      className={`panel version-checker ${update.update_available ? "version-checker--available" : ""}`}
+    >
+      <div>
+        <strong>Software updates</strong>
+        <span>{state}</span>
+        <small>Running {version.data.daemon_version || version.data.amule_version}</small>
+      </div>
+      <button
+        className="muted"
+        disabled={check.isPending || waitingForResult}
+        onClick={() => check.mutate()}
+      >
+        <RefreshCw size={15} /> Check now
+      </button>
+    </section>
+  );
+}
 
 const readOnlyKeys = new Set([
   "user_hash",
@@ -524,6 +585,7 @@ export function PreferencesView() {
           <Save size={15} /> Save changes
         </button>
       </div>
+      <VersionChecker />
       {preferences.isPending || preferences.isError ? (
         <QueryNotice
           loading={preferences.isPending}

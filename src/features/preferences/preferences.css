@@ -16,6 +16,40 @@
   align-items: center;
   gap: 6px;
 }
+.version-checker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: -8px 0 20px;
+  padding: 12px 14px;
+}
+.version-checker--available {
+  border-color: #725f30;
+  background: #2a2417;
+}
+.version-checker > div {
+  display: grid;
+  gap: 3px;
+}
+.version-checker strong {
+  color: #d7e1ed;
+  font-size: 14px;
+}
+.version-checker--available strong {
+  color: #f4c95d;
+}
+.version-checker span,
+.version-checker small {
+  color: #91a4b8;
+  font-size: 12px;
+}
+.version-checker button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
 .preference-advanced-toggle {
   display: inline-flex;
   align-items: center;

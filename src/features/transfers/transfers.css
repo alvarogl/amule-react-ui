@@ -76,6 +76,26 @@
   background: #7f2733;
   color: #ffe2e5;
 }
+.transfer-progress-cell {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.transfer-progress-cell__bar {
+  position: absolute;
+  z-index: 0;
+  inset: 0 auto 0 0;
+  min-width: 0;
+  background: #237a9d;
+  opacity: 0.28;
+  pointer-events: none;
+  transition: width 220ms ease;
+}
+.transfer-progress-cell__text {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+}
 .transfer-actions__menu {
   display: none;
   position: relative;

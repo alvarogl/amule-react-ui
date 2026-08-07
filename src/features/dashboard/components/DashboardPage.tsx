@@ -1,7 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
+import { lazy, Suspense, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Activity,
   ChartNoAxesCombined,
   Check,
   FolderTree,
@@ -11,7 +10,6 @@ import {
   Network,
   Pause,
   Play,
-  RefreshCw,
   Search,
   ScrollText,
   Server,
@@ -22,6 +20,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
+import amuleLogo from "@/assets/amule-logo.png";
 import { api, type Download } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
 import { useSession } from "@/features/auth/session-context";
@@ -57,64 +56,11 @@ function Metric({ label, value }: { label: string; value: string }) {
     </section>
   );
 }
-function UpdateStatus() {
-  const client = useQueryClient();
-  const lastCheckedBeforeRequest = useRef<number | null>(null);
-  const [waitingForResult, setWaitingForResult] = useState(false);
-  const version = useQuery({
-    queryKey: queryKeys.version,
-    queryFn: api.version,
-    retry: false,
-    refetchInterval: waitingForResult ? 3_000 : false,
-  });
-  useEffect(() => {
-    const lastChecked = version.data?.update.last_checked;
-    if (
-      waitingForResult &&
-      lastChecked !== null &&
-      lastChecked !== undefined &&
-      lastChecked !== lastCheckedBeforeRequest.current
-    ) {
-      setWaitingForResult(false);
-      toast.success("Version check completed.");
-    }
-  }, [version.data?.update.last_checked, waitingForResult]);
-  const check = useMutation({
-    mutationFn: api.checkVersion,
-    onSuccess: () => {
-      lastCheckedBeforeRequest.current = version.data?.update.last_checked ?? null;
-      setWaitingForResult(true);
-      void client.invalidateQueries({ queryKey: queryKeys.version });
-    },
-    onError: (error) => {
-      setWaitingForResult(false);
-      toast.error(getErrorMessage(error));
-    },
-  });
-  if (!version.data?.update.check_enabled) return null;
-  const update = version.data.update;
-  const state = update.update_available
-    ? `Version ${update.latest_version} is available`
-    : update.checked
-      ? "aMule is up to date"
-      : "No version check has completed yet";
-  return (
-    <section
-      className={`update-status ${update.update_available ? "update-status--available" : ""}`}
-    >
-      <div>
-        <strong>{state}</strong>
-        <span>Running {version.data.daemon_version || version.data.amule_version}</span>
-      </div>
-      <button
-        className="muted"
-        disabled={check.isPending || waitingForResult}
-        onClick={() => check.mutate()}
-      >
-        <RefreshCw size={15} /> Check now
-      </button>
-    </section>
-  );
+function downloadProgress(download: Download) {
+  const progress =
+    download.progress?.percent ??
+    (download.size ? ((download.size_done ?? 0) / download.size) * 100 : undefined);
+  return progress === undefined ? undefined : Math.min(100, Math.max(0, progress));
 }
 function Transfers({ downloads }: { downloads: Download[] }) {
   const [selected, setSelected] = useState<string[]>([]);
@@ -398,7 +344,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
               />
               <SortableHeader
                 column="size"
-                label="Size / downloaded"
+                label="Downloaded / size"
                 sort={sort}
                 direction={direction}
                 onSort={toggleSort}
@@ -414,65 +360,74 @@ function Transfers({ downloads }: { downloads: Download[] }) {
             </tr>
           </thead>
           <tbody>
-            {orderedRows.map((d) => (
-              <tr key={d.hash}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(d.hash)}
-                    onChange={() => toggle(d.hash)}
-                  />
-                </td>
-                <td>
-                  <TransferDetails hash={d.hash} name={d.name} />
-                </td>
-                <td>
-                  <span className="badge">{d.status}</span>
-                </td>
-                <td>
-                  <span className="badge">
-                    {d.priority_auto ? "auto" : (d.priority ?? "normal")}
-                  </span>
-                </td>
-                <td>
-                  <select
-                    className="category-select"
-                    value={d.category ?? 0}
-                    onChange={(e) =>
-                      category.mutate({
-                        hash: d.hash,
-                        index: Number(e.target.value),
-                      })
-                    }
-                  >
-                    {categories.data?.categories.map((c) => (
-                      <option key={c.index} value={c.index}>
-                        {c.index === 0 ? "Uncategorized" : c.name || "Unnamed category"}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  {formatMebibytes(d.size)} / {formatMebibytes(d.size_done)} (
-                  {d.progress?.percent !== undefined
-                    ? `${d.progress.percent.toFixed(1)}%`
-                    : d.size
-                      ? `${Math.min(100, ((d.size_done ?? 0) / d.size) * 100).toFixed(1)}%`
-                      : "—"}
-                  )
-                </td>
-                <td>{formatRate(d.speed_bps)}</td>
-                <td className="actions-column actions-column--fixed">
-                  <div className="transfer-actions__inline">{transferActions(d)}</div>
-                  <details className="transfer-actions__menu">
-                    <summary className="icon" aria-label={`Actions for ${d.name}`} title="Actions">
-                      <MoreHorizontal size={16} />
-                    </summary>
-                    <div>{transferActions(d)}</div>
-                  </details>
-                </td>
-              </tr>
-            ))}
+            {orderedRows.map((d) => {
+              const progress = downloadProgress(d);
+              return (
+                <tr key={d.hash}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(d.hash)}
+                      onChange={() => toggle(d.hash)}
+                    />
+                  </td>
+                  <td>
+                    <TransferDetails hash={d.hash} name={d.name} />
+                  </td>
+                  <td>
+                    <span className="badge">{d.status}</span>
+                  </td>
+                  <td>
+                    <span className="badge">
+                      {d.priority_auto ? "auto" : (d.priority ?? "normal")}
+                    </span>
+                  </td>
+                  <td>
+                    <select
+                      className="category-select"
+                      value={d.category ?? 0}
+                      onChange={(e) =>
+                        category.mutate({
+                          hash: d.hash,
+                          index: Number(e.target.value),
+                        })
+                      }
+                    >
+                      {categories.data?.categories.map((c) => (
+                        <option key={c.index} value={c.index}>
+                          {c.index === 0 ? "Uncategorized" : c.name || "Unnamed category"}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="transfer-progress-cell">
+                    <span
+                      className="transfer-progress-cell__bar"
+                      aria-hidden="true"
+                      style={{ width: `${progress ?? 0}%` }}
+                    />
+                    <span className="transfer-progress-cell__text">
+                      {formatMebibytes(d.size_done)} / {formatMebibytes(d.size)} (
+                      {progress === undefined ? "—" : `${progress.toFixed(1)}%`})
+                    </span>
+                  </td>
+                  <td>{formatRate(d.speed_bps)}</td>
+                  <td className="actions-column actions-column--fixed">
+                    <div className="transfer-actions__inline">{transferActions(d)}</div>
+                    <details className="transfer-actions__menu">
+                      <summary
+                        className="icon"
+                        aria-label={`Actions for ${d.name}`}
+                        title="Actions"
+                      >
+                        <MoreHorizontal size={16} />
+                      </summary>
+                      <div>{transferActions(d)}</div>
+                    </details>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -612,6 +567,8 @@ export function DashboardPage() {
   const downloads = useQuery({
     queryKey: queryKeys.downloads,
     queryFn: api.downloads,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
   });
   useLiveUpdates();
   if (status.isPending) return <main className="loading">Connecting to aMule…</main>;
@@ -672,7 +629,6 @@ export function DashboardPage() {
           <Metric label="Sources" value={String(s.queue.total_source_count)} />
           <Metric label="Upload queue" value={String(s.queue.upload_queue_length)} />
         </div>
-        <UpdateStatus />
         <Transfers downloads={downloads.data?.downloads ?? []} />
         <Uploads />
       </div>
@@ -680,8 +636,8 @@ export function DashboardPage() {
   return (
     <main className="shell">
       <header>
-        <div>
-          <Activity />
+        <div className="app-brand">
+          <img className="app-logo" src={amuleLogo} alt="" />
           <strong>aMule Console</strong>
           <span className="live">LIVE</span>
         </div>

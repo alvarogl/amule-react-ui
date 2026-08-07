@@ -26,11 +26,15 @@ body {
   display: grid;
   gap: 16px;
 }
-.login svg {
-  color: #4dd2ff;
+.login-logo {
+  width: 64px;
+  height: 64px;
+  justify-self: center;
+  object-fit: contain;
 }
 .login h1 {
   margin: 0;
+  text-align: center;
 }
 .login p,
 .subtle,
@@ -41,6 +45,22 @@ body {
   display: grid;
   gap: 7px;
   font-size: 14px;
+}
+.login-help {
+  color: #91a4b8;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.login-help summary {
+  cursor: pointer;
+  color: #b9d9eb;
+  font-weight: 600;
+}
+.login-help p {
+  margin: 8px 0 0;
+}
+.login-help code {
+  color: #d7e1ed;
 }
 input {
   padding: 11px;
@@ -95,6 +115,15 @@ header > div {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.app-brand {
+  min-width: 0;
+}
+.app-logo {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 .live {
   font-size: 11px;
@@ -168,42 +197,6 @@ header > div {
   display: block;
   margin-top: 7px;
   font-size: 22px;
-}
-.update-status {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin: -8px 0 20px;
-  padding: 12px 14px;
-  border: 1px solid #26394d;
-  border-radius: 8px;
-  background: #121b26;
-}
-.update-status--available {
-  border-color: #725f30;
-  background: #2a2417;
-}
-.update-status div {
-  display: grid;
-  gap: 3px;
-}
-.update-status strong {
-  color: #d7e1ed;
-  font-size: 14px;
-}
-.update-status--available strong {
-  color: #f4c95d;
-}
-.update-status span {
-  color: #91a4b8;
-  font-size: 12px;
-}
-.update-status button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
 }
 .panel {
   overflow: hidden;

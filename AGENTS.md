@@ -32,6 +32,7 @@ settings are development-only.
 ## Coding Style & Naming Conventions
 
 Use strict TypeScript, functional components, named exports, and Prettier defaults (two spaces, double quotes). Use `PascalCase.tsx` for components and `kebab-case.ts` for hooks/utilities. Import shared modules through `@/`. ESLint enforces core, TypeScript, React Hooks, and React Refresh rules. Keep Zod API parsing in `src/shared/api/`; do not access EC or add a backend.
+When an SSE event contains a complete resource, validate it and update the React Query cache directly; use bounded polling only as a recovery fallback.
 
 ## Testing Guidelines
 
@@ -48,6 +49,8 @@ Use focused Conventional Commit subjects: `feat:`, `fix:`, `refactor:`, `ci:`, `
 ## Security & Configuration
 
 Authentication is cookie-based; never persist passwords or tokens in browser storage. Keep production API paths relative and restrict LAN access with aMule/firewall settings.
+Password recovery is an operator-side replacement workflow: do not add a
+client-side reset endpoint or imply that a stored password can be recovered.
 
 ## Release and Deployment Boundaries
 
