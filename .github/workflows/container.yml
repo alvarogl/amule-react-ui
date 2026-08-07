@@ -54,6 +54,7 @@ jobs:
           chmod 600 "$work_dir/admin-password"
           mkdir "$work_dir/config" "$work_dir/incoming" "$work_dir/temp"
           docker run -d --name amule-smoke -p 127.0.0.1:14713:4713 \
+            -e "PUID=$(id -u)" -e "PGID=$(id -g)" \
             -v "$work_dir/config:/config" -v "$work_dir/incoming:/incoming" -v "$work_dir/temp:/temp" \
             -v "$work_dir/admin-password:/run/secrets/amule_admin_password:ro" \
             amule-console:ci
