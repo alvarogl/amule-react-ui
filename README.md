@@ -40,6 +40,11 @@ sudo systemctl status amuled.service amuleweb.service
 
 Do not stop `amuled` when you only want to run the UI differently: it owns the core and its `amuleapi` child. To use the development UI, leave that stack running and start Vite separately.
 
+For a complete first install, upgrade, rollback, and secure-network guide, see
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Generic non-secret configuration
+templates are available at [docs/amule.conf.example](docs/amule.conf.example)
+and [docs/amuleapi.conf.example](docs/amuleapi.conf.example).
+
 ## Local development
 
 ```bash
@@ -71,7 +76,56 @@ pnpm build
 
 The production bundle is static; Vite's proxy only applies to `pnpm dev`. Rebuild after UI changes. If the configured static-root path changes, restart `amuled` so it starts `amuleapi` with the new configuration.
 
-For LAN access, follow the aMule project's network/security guidance and restrict the API listener and firewall rules to the intended network. Put TLS in front of `amuleapi` before exposing it beyond a trusted local network.
+For LAN access, restrict the API listener and firewall rules to the intended network. Put TLS in front of `amuleapi` before exposing it beyond a trusted local network; the deployment guide explains why the static UI and same-origin API must be secured together.
+
+### Repeatable install and rollback
+
+The deployment helper stages a built bundle, retains the previous static root,
+and does not restart services. Preview its work first:
+
+```bash
+scripts/install-static-ui.sh --dry-run --static-root /absolute/path/to/static-root
+```
+
+To install, optionally pass the explicit aMule configuration files to patch
+only their API startup/server settings. The helper never writes credentials or
+replaces either complete configuration file:
+
+```bash
+scripts/install-static-ui.sh --static-root /absolute/path/to/static-root \
+  --amule-conf /absolute/path/to/amule.conf \
+  --amuleapi-conf /absolute/path/to/amuleapi.conf
+```
+
+It prints a rollback directory. Restore it with
+`scripts/install-static-ui.sh --rollback /path/to/rollback-directory`.
+
+### Create a release archive
+
+After a production build, create an operator-ready archive and SHA-256
+checksum with:
+
+```bash
+pnpm build
+scripts/create-release-archive.sh
+```
+
+The output in `release/` contains the static bundle, deployment helper,
+generic templates, documentation, and a release manifest. It deliberately
+excludes `.env`, credentials, runtime configuration, and dependencies. Verify
+the downloaded archive with `sha256sum --check release/*.sha256` before use.
+
+### Publish a GitHub Release
+
+The `Release` workflow is manual-only. From `main`, use **Actions → Release →
+Run workflow**, enter the exact version in `package.json`, and wait for its
+quality, deployment, browser, and archive checks to pass. It then creates tag
+`v<version>` and attaches the archive plus checksum to a generated GitHub
+Release. It does not deploy to any aMule host.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 ## Quality checks
 
@@ -80,6 +134,8 @@ pnpm exec prettier --write . --ignore-unknown
 pnpm format:check
 pnpm lint
 pnpm test
+pnpm test:deployment
+pnpm test:release
 pnpm build
 ```
 

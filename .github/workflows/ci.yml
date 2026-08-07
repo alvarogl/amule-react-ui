@@ -46,5 +46,11 @@ jobs:
       - name: Run tests
         run: pnpm test
 
+      - name: Test deployment helper
+        run: pnpm test:deployment
+
       - name: Build production bundle
         run: pnpm build
+
+      - name: Test release package
+        run: pnpm test:release

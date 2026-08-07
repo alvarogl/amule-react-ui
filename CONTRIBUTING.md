@@ -15,6 +15,8 @@ Before opening a pull request, run:
 pnpm format:check
 pnpm lint
 pnpm test
+pnpm test:deployment
+pnpm test:release
 pnpm build
 ```
 
@@ -29,6 +31,11 @@ pnpm build
 ## Pull requests
 
 Use a focused branch and open a pull request targeting `main`. Fill in the pull-request template, keep commits coherent, and include a screenshot or short recording for material interface changes. The required CI check validates formatting, tests, and the production build.
+
+## License
+
+By contributing, you agree that your contributions are licensed under the
+[MIT License](LICENSE).
 
 ## aMule compatibility
 

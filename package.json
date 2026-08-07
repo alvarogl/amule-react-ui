@@ -2,6 +2,7 @@
   "name": "amule-react-ui",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:deployment": "bash scripts/test-install-static-ui.sh",
+    "test:release": "bash scripts/test-release-archive.sh",
     "preview": "vite preview"
   },
   "packageManager": "pnpm@11.9.0",

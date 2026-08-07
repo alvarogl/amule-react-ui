@@ -1,0 +1,9 @@
+; amuleapi settings belong in the same configuration directory as amuled.
+; Replace the placeholder with the absolute path of this repository's dist/.
+[Server]
+BindAddress=127.0.0.1
+Port=4713
+AllowCORS=0
+CorsOriginAllowlist=
+StaticRoot=/absolute/path/to/amule-react-ui/dist
+

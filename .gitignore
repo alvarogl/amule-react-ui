@@ -6,3 +6,4 @@ playwright-report/
 .env
 !.env.example
 PLAN.md
+release/
