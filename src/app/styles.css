@@ -29,10 +29,12 @@ body {
 .login-logo {
   width: 64px;
   height: 64px;
+  justify-self: center;
   object-fit: contain;
 }
 .login h1 {
   margin: 0;
+  text-align: center;
 }
 .login p,
 .subtle,
