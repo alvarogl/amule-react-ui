@@ -198,42 +198,6 @@ header > div {
   margin-top: 7px;
   font-size: 22px;
 }
-.update-status {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin: -8px 0 20px;
-  padding: 12px 14px;
-  border: 1px solid #26394d;
-  border-radius: 8px;
-  background: #121b26;
-}
-.update-status--available {
-  border-color: #725f30;
-  background: #2a2417;
-}
-.update-status div {
-  display: grid;
-  gap: 3px;
-}
-.update-status strong {
-  color: #d7e1ed;
-  font-size: 14px;
-}
-.update-status--available strong {
-  color: #f4c95d;
-}
-.update-status span {
-  color: #91a4b8;
-  font-size: 12px;
-}
-.update-status button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
 .panel {
   overflow: hidden;
 }

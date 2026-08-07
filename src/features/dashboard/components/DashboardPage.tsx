@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
+import { lazy, Suspense, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChartNoAxesCombined,
@@ -10,7 +10,6 @@ import {
   Network,
   Pause,
   Play,
-  RefreshCw,
   Search,
   ScrollText,
   Server,
@@ -54,65 +53,6 @@ function Metric({ label, value }: { label: string; value: string }) {
     <section className="metric">
       <span>{label}</span>
       <strong>{value}</strong>
-    </section>
-  );
-}
-function UpdateStatus() {
-  const client = useQueryClient();
-  const lastCheckedBeforeRequest = useRef<number | null>(null);
-  const [waitingForResult, setWaitingForResult] = useState(false);
-  const version = useQuery({
-    queryKey: queryKeys.version,
-    queryFn: api.version,
-    retry: false,
-    refetchInterval: waitingForResult ? 3_000 : false,
-  });
-  useEffect(() => {
-    const lastChecked = version.data?.update.last_checked;
-    if (
-      waitingForResult &&
-      lastChecked !== null &&
-      lastChecked !== undefined &&
-      lastChecked !== lastCheckedBeforeRequest.current
-    ) {
-      setWaitingForResult(false);
-      toast.success("Version check completed.");
-    }
-  }, [version.data?.update.last_checked, waitingForResult]);
-  const check = useMutation({
-    mutationFn: api.checkVersion,
-    onSuccess: () => {
-      lastCheckedBeforeRequest.current = version.data?.update.last_checked ?? null;
-      setWaitingForResult(true);
-      void client.invalidateQueries({ queryKey: queryKeys.version });
-    },
-    onError: (error) => {
-      setWaitingForResult(false);
-      toast.error(getErrorMessage(error));
-    },
-  });
-  if (!version.data?.update.check_enabled) return null;
-  const update = version.data.update;
-  const state = update.update_available
-    ? `Version ${update.latest_version} is available`
-    : update.checked
-      ? "aMule is up to date"
-      : "No version check has completed yet";
-  return (
-    <section
-      className={`update-status ${update.update_available ? "update-status--available" : ""}`}
-    >
-      <div>
-        <strong>{state}</strong>
-        <span>Running {version.data.daemon_version || version.data.amule_version}</span>
-      </div>
-      <button
-        className="muted"
-        disabled={check.isPending || waitingForResult}
-        onClick={() => check.mutate()}
-      >
-        <RefreshCw size={15} /> Check now
-      </button>
     </section>
   );
 }
@@ -672,7 +612,6 @@ export function DashboardPage() {
           <Metric label="Sources" value={String(s.queue.total_source_count)} />
           <Metric label="Upload queue" value={String(s.queue.upload_queue_length)} />
         </div>
-        <UpdateStatus />
         <Transfers downloads={downloads.data?.downloads ?? []} />
         <Uploads />
       </div>
