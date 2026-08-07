@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { Download } from "@/shared/api/amule-api";
 import { liveEventTypes, subscribeToLiveUpdates } from "./use-live-updates";
 
 class FakeEventSource {
@@ -6,7 +7,7 @@ class FakeEventSource {
   onopen: (() => void) | null = null;
   onerror: (() => void) | null = null;
   close = vi.fn();
-  private listeners = new Map<string, () => void>();
+  private listeners = new Map<string, EventListener>();
 
   constructor(
     readonly url: string,
@@ -16,33 +17,69 @@ class FakeEventSource {
   }
 
   addEventListener(type: string, listener: EventListenerOrEventListenerObject) {
-    this.listeners.set(type, listener as () => void);
+    this.listeners.set(type, listener as EventListener);
   }
 
-  emit(type: string) {
-    this.listeners.get(type)?.();
+  emit(type: string, data: unknown = {}) {
+    this.listeners.get(type)?.(new MessageEvent(type, { data: JSON.stringify(data) }));
   }
 }
 
 function setup() {
   const invalidateQueries = vi.fn();
+  let downloads = {
+    downloads: [
+      {
+        hash: "download-1",
+        name: "example.iso",
+        status: "downloading",
+        size: 100,
+        size_done: 10,
+        progress: { percent: 10 },
+      },
+    ],
+  };
+  const setQueryData = vi.fn(
+    (
+      key: readonly unknown[],
+      updater: (current: typeof downloads | undefined) => typeof downloads | undefined,
+    ) => {
+      if (key.join(",") === "downloads") downloads = updater(downloads) ?? downloads;
+    },
+  );
   const onStreamError = vi.fn();
   const unsubscribe = subscribeToLiveUpdates({
-    queryClient: { invalidateQueries },
+    queryClient: { invalidateQueries, setQueryData } as never,
     onStreamError,
     EventSourceClass: FakeEventSource as never,
   });
-  return { invalidateQueries, onStreamError, stream: FakeEventSource.current!, unsubscribe };
+  return {
+    getDownloads: () => downloads,
+    invalidateQueries,
+    onStreamError,
+    setQueryData,
+    stream: FakeEventSource.current!,
+    unsubscribe,
+  };
 }
 
 describe("live update subscription", () => {
   it("refreshes snapshots for every documented live event", () => {
-    const { invalidateQueries, stream } = setup();
+    const { getDownloads, invalidateQueries, setQueryData, stream } = setup();
 
-    stream.emit("download_updated");
+    stream.emit("download_updated", {
+      hash: "download-1",
+      name: "example.iso",
+      status: "downloading",
+      size: 100,
+      size_done: 25,
+      progress: { percent: 25 },
+    } satisfies Download);
 
     expect(liveEventTypes).toContain("download_updated");
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["downloads"] });
+    expect(setQueryData).toHaveBeenCalledWith(["downloads"], expect.any(Function));
+    expect(getDownloads().downloads[0]?.size_done).toBe(25);
+    expect(invalidateQueries).not.toHaveBeenCalledWith({ queryKey: ["downloads"] });
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["search-results"] });
   });
 

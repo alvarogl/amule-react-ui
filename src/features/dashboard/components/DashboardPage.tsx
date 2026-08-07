@@ -56,6 +56,12 @@ function Metric({ label, value }: { label: string; value: string }) {
     </section>
   );
 }
+function downloadProgress(download: Download) {
+  const progress =
+    download.progress?.percent ??
+    (download.size ? ((download.size_done ?? 0) / download.size) * 100 : undefined);
+  return progress === undefined ? undefined : Math.min(100, Math.max(0, progress));
+}
 function Transfers({ downloads }: { downloads: Download[] }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
@@ -338,7 +344,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
               />
               <SortableHeader
                 column="size"
-                label="Size / downloaded"
+                label="Downloaded / size"
                 sort={sort}
                 direction={direction}
                 onSort={toggleSort}
@@ -354,65 +360,74 @@ function Transfers({ downloads }: { downloads: Download[] }) {
             </tr>
           </thead>
           <tbody>
-            {orderedRows.map((d) => (
-              <tr key={d.hash}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(d.hash)}
-                    onChange={() => toggle(d.hash)}
-                  />
-                </td>
-                <td>
-                  <TransferDetails hash={d.hash} name={d.name} />
-                </td>
-                <td>
-                  <span className="badge">{d.status}</span>
-                </td>
-                <td>
-                  <span className="badge">
-                    {d.priority_auto ? "auto" : (d.priority ?? "normal")}
-                  </span>
-                </td>
-                <td>
-                  <select
-                    className="category-select"
-                    value={d.category ?? 0}
-                    onChange={(e) =>
-                      category.mutate({
-                        hash: d.hash,
-                        index: Number(e.target.value),
-                      })
-                    }
-                  >
-                    {categories.data?.categories.map((c) => (
-                      <option key={c.index} value={c.index}>
-                        {c.index === 0 ? "Uncategorized" : c.name || "Unnamed category"}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  {formatMebibytes(d.size)} / {formatMebibytes(d.size_done)} (
-                  {d.progress?.percent !== undefined
-                    ? `${d.progress.percent.toFixed(1)}%`
-                    : d.size
-                      ? `${Math.min(100, ((d.size_done ?? 0) / d.size) * 100).toFixed(1)}%`
-                      : "—"}
-                  )
-                </td>
-                <td>{formatRate(d.speed_bps)}</td>
-                <td className="actions-column actions-column--fixed">
-                  <div className="transfer-actions__inline">{transferActions(d)}</div>
-                  <details className="transfer-actions__menu">
-                    <summary className="icon" aria-label={`Actions for ${d.name}`} title="Actions">
-                      <MoreHorizontal size={16} />
-                    </summary>
-                    <div>{transferActions(d)}</div>
-                  </details>
-                </td>
-              </tr>
-            ))}
+            {orderedRows.map((d) => {
+              const progress = downloadProgress(d);
+              return (
+                <tr key={d.hash}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(d.hash)}
+                      onChange={() => toggle(d.hash)}
+                    />
+                  </td>
+                  <td>
+                    <TransferDetails hash={d.hash} name={d.name} />
+                  </td>
+                  <td>
+                    <span className="badge">{d.status}</span>
+                  </td>
+                  <td>
+                    <span className="badge">
+                      {d.priority_auto ? "auto" : (d.priority ?? "normal")}
+                    </span>
+                  </td>
+                  <td>
+                    <select
+                      className="category-select"
+                      value={d.category ?? 0}
+                      onChange={(e) =>
+                        category.mutate({
+                          hash: d.hash,
+                          index: Number(e.target.value),
+                        })
+                      }
+                    >
+                      {categories.data?.categories.map((c) => (
+                        <option key={c.index} value={c.index}>
+                          {c.index === 0 ? "Uncategorized" : c.name || "Unnamed category"}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="transfer-progress-cell">
+                    <span
+                      className="transfer-progress-cell__bar"
+                      aria-hidden="true"
+                      style={{ width: `${progress ?? 0}%` }}
+                    />
+                    <span className="transfer-progress-cell__text">
+                      {formatMebibytes(d.size_done)} / {formatMebibytes(d.size)} (
+                      {progress === undefined ? "—" : `${progress.toFixed(1)}%`})
+                    </span>
+                  </td>
+                  <td>{formatRate(d.speed_bps)}</td>
+                  <td className="actions-column actions-column--fixed">
+                    <div className="transfer-actions__inline">{transferActions(d)}</div>
+                    <details className="transfer-actions__menu">
+                      <summary
+                        className="icon"
+                        aria-label={`Actions for ${d.name}`}
+                        title="Actions"
+                      >
+                        <MoreHorizontal size={16} />
+                      </summary>
+                      <div>{transferActions(d)}</div>
+                    </details>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -552,6 +567,8 @@ export function DashboardPage() {
   const downloads = useQuery({
     queryKey: queryKeys.downloads,
     queryFn: api.downloads,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
   });
   useLiveUpdates();
   if (status.isPending) return <main className="loading">Connecting to aMule…</main>;
