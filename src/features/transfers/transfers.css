@@ -10,6 +10,19 @@
 .transfer-tools input:last-child {
   max-width: 170px;
 }
+.transfer-tools button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.transfer-tools__spinner {
+  animation: transfer-tools-spin 0.8s linear infinite;
+}
+@keyframes transfer-tools-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .bulk-tools {
   display: flex;
   gap: 8px;
