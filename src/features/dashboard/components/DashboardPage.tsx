@@ -5,6 +5,7 @@ import {
   Check,
   FolderTree,
   LayoutDashboard,
+  LoaderCircle,
   LogOut,
   MoreHorizontal,
   Network,
@@ -239,7 +240,10 @@ function Transfers({ downloads }: { downloads: Download[] }) {
           value={link}
           onChange={(e) => setLink(e.target.value)}
         />
-        <button>Add link</button>
+        <button disabled={add.isPending} aria-busy={add.isPending}>
+          {add.isPending && <LoaderCircle className="transfer-tools__spinner" size={15} />}
+          {add.isPending ? "Adding link…" : "Add link"}
+        </button>
         <input placeholder="Filter" value={filter} onChange={(e) => setFilter(e.target.value)} />
       </form>
       <div className="bulk-tools">
