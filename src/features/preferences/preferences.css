@@ -1,0 +1,91 @@
+@layer components {
+  .preference-toolbar {
+    @apply my-5 flex items-center justify-end gap-2 max-[600px]:flex-wrap max-[600px]:justify-start;
+  }
+  .preference-toolbar span {
+    @apply mr-auto text-[13px] text-muted max-[600px]:w-full;
+  }
+  .preference-toolbar button,
+  .password-manager button {
+    @apply inline-flex items-center gap-[6px];
+  }
+  .version-checker {
+    @apply mx-0 mt-[-8px] mb-5 flex items-center justify-between gap-[14px] p-3;
+  }
+  .version-checker--available {
+    @apply border-[#725f30] bg-[#2a2417];
+  }
+  .version-checker > div {
+    @apply grid gap-[3px];
+  }
+  .version-checker strong {
+    @apply text-sm text-text;
+  }
+  .version-checker--available strong {
+    @apply text-warning;
+  }
+  .version-checker span,
+  .version-checker small {
+    @apply text-xs text-muted;
+  }
+  .preference-advanced-toggle,
+  .preference-toggle {
+    @apply inline-flex items-center gap-[6px] text-[13px] text-[#b9cada];
+  }
+  .preference-restart {
+    @apply flex items-center gap-[7px] rounded-[7px] border border-[#725f30] bg-[#2a2417] px-3 py-2.5 text-warning;
+  }
+  .preference-grid {
+    @apply grid grid-cols-2 gap-[18px] max-[850px]:grid-cols-1;
+  }
+  .preference-group {
+    @apply overflow-visible;
+  }
+  .preference-group .panel-title h2 {
+    @apply flex items-center gap-[7px];
+  }
+  .preference-fields {
+    @apply grid gap-3 px-[18px] py-4;
+  }
+  .preference-field {
+    @apply grid gap-[6px] text-[13px] text-[#b9cada];
+  }
+  .preference-field > span {
+    @apply flex justify-between gap-2;
+  }
+  .preference-field small,
+  .preference-toggle em {
+    @apply text-[11px] text-[#6f8499] not-italic;
+  }
+  .preference-toggle em {
+    @apply ml-auto;
+  }
+  .preference-field input,
+  .preference-field textarea,
+  .preference-field select {
+    @apply w-full p-2;
+  }
+  .preference-field textarea {
+    @apply min-h-[70px] resize-y;
+  }
+  .preference-field input[readonly],
+  .preference-field textarea[readonly] {
+    @apply opacity-[0.62];
+  }
+  .preference-subgroup {
+    @apply grid gap-3 rounded-[7px] border border-border p-3;
+  }
+  .preference-subgroup h3,
+  .preference-secret-group h3 {
+    @apply m-0 text-[13px] text-muted;
+  }
+  .preference-help {
+    @apply m-0 text-[13px] leading-6 text-muted;
+  }
+  .preference-validation {
+    @apply flex items-center gap-[7px] rounded-[7px] border border-[#9b3d4b] bg-[#2b1820] px-3 py-2.5 text-[#ffb2ba];
+  }
+  .preference-secret-group {
+    @apply grid gap-2.5 border-t border-border pt-[14px];
+  }
+}

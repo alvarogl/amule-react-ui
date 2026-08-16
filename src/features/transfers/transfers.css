@@ -1,0 +1,60 @@
+@layer components {
+  .transfer-tools,
+  .bulk-tools {
+    @apply flex gap-[9px] border-b border-border px-[18px] py-[14px] max-[700px]:flex-wrap;
+  }
+  .transfer-tools input:first-child {
+    @apply flex-1;
+  }
+  .transfer-tools input:last-child {
+    @apply max-w-[170px] max-[700px]:max-w-none max-[700px]:basis-full;
+  }
+  .transfer-tools button,
+  .shared-heading button,
+  .share-root-form button {
+    @apply inline-flex items-center gap-[7px];
+  }
+  .transfer-tools__spinner,
+  .spin {
+    @apply animate-spin;
+  }
+  .bulk-tools {
+    @apply items-center py-2.5;
+  }
+  .bulk-tools span {
+    @apply mr-auto text-[13px] text-muted;
+  }
+  .bulk-tools button {
+    @apply px-[9px] py-[6px] text-xs;
+  }
+  .bulk-priority {
+    @apply flex items-center gap-[6px] text-xs text-muted;
+  }
+  .bulk-priority select {
+    @apply min-w-[136px] rounded-[5px] border border-input-border bg-control p-[6px] text-text;
+  }
+  .bulk-remove {
+    @apply bg-[#7f2733] text-[#ffe2e5];
+  }
+  .transfer-progress-cell {
+    @apply relative isolate overflow-hidden;
+  }
+  .transfer-progress-cell__bar {
+    @apply pointer-events-none absolute inset-y-0 left-0 z-0 min-w-0 bg-[#237a9d] opacity-28 transition-[width] duration-[220ms];
+  }
+  .transfer-progress-cell__text {
+    @apply relative z-[1] whitespace-nowrap;
+  }
+  .transfer-actions__menu {
+    @apply relative hidden max-[760px]:inline-block;
+  }
+  .transfer-actions__menu summary {
+    @apply list-none;
+  }
+  .transfer-actions__menu > div {
+    @apply absolute right-0 z-[4] flex gap-[5px] rounded-[7px] border border-input-border bg-surface p-[6px] shadow-[0_8px_24px_#0008];
+  }
+  .transfer-actions__inline {
+    @apply max-[760px]:hidden;
+  }
+}

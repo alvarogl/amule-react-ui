@@ -1,0 +1,67 @@
+@layer components {
+  .statistics-controls,
+  .peer-filters {
+    @apply flex flex-wrap items-center gap-[6px];
+  }
+  .statistics-controls label {
+    @apply inline-flex items-center gap-[6px] text-xs text-muted;
+  }
+  .statistics-chart-wrap {
+    @apply p-[18px];
+  }
+  .statistics-chart-scale,
+  .statistics-session {
+    @apply flex justify-between gap-3 text-xs text-muted;
+  }
+  .statistics-summary {
+    @apply grid grid-cols-4 max-[700px]:grid-cols-2;
+  }
+  .statistics-summary-card {
+    @apply min-w-0 border-r border-border p-[18px] last:border-r-0;
+  }
+  .statistics-summary-card span {
+    @apply block text-xs text-muted;
+  }
+  .statistics-summary-card strong {
+    @apply mt-[7px] block overflow-hidden text-base text-text text-ellipsis whitespace-nowrap;
+  }
+  .statistics-search {
+    @apply flex items-center gap-[6px] text-muted max-[700px]:w-full;
+  }
+  .statistics-search input {
+    @apply w-[170px] px-[9px] py-[7px] max-[700px]:w-auto max-[700px]:flex-1;
+  }
+  .statistics-chart {
+    @apply mt-2.5 h-[280px] w-full max-[700px]:h-[220px];
+  }
+  .statistics-session {
+    @apply flex-wrap justify-start px-[18px] pb-[18px];
+  }
+  .statistics-tree {
+    @apply py-2;
+  }
+  .statistics-trigger {
+    @apply flex w-full items-center rounded-none bg-transparent px-[18px] py-[9px] text-left text-text hover:bg-[#172535];
+  }
+  .statistics-trigger svg {
+    @apply transition-transform duration-150;
+  }
+  .statistics-trigger[data-state="open"] svg {
+    @apply rotate-90;
+  }
+  .statistics-accordion-content {
+    @apply overflow-hidden;
+  }
+  .statistics-children {
+    @apply ml-[18px] border-l border-border;
+  }
+  .statistics-leaf {
+    @apply grid grid-cols-[minmax(0,1fr)_minmax(120px,auto)] gap-[18px] py-[7px] text-[#b9cada] wrap-anywhere hover:bg-[#172535] max-[700px]:grid-cols-1 max-[700px]:gap-0.5;
+  }
+  .statistics-leaf strong {
+    @apply text-right font-semibold text-text max-[700px]:text-left;
+  }
+  .statistics-empty {
+    @apply px-[18px] pb-[18px];
+  }
+}

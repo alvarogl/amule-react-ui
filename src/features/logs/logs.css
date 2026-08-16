@@ -1,0 +1,63 @@
+@layer components {
+  .logs-panel,
+  .peers-panel,
+  .statistics-panel {
+    @apply mt-5;
+  }
+  .log-tabs,
+  .log-actions {
+    @apply flex items-center gap-[6px];
+  }
+  .log-tabs {
+    @apply max-[600px]:flex-wrap;
+  }
+  .log-tabs button,
+  .peer-filters button,
+  .statistics-controls button {
+    @apply bg-transparent px-[9px] py-[6px] text-muted-strong;
+  }
+  .log-tabs .active {
+    @apply bg-control text-text;
+  }
+  .log-actions span,
+  .log-tail,
+  .log-live-tail {
+    @apply text-xs text-muted;
+  }
+  .log-tail,
+  .log-live-tail {
+    @apply inline-flex items-center gap-[5px];
+  }
+  .log-live-tail {
+    @apply whitespace-nowrap;
+  }
+  .log-tail select,
+  .statistics-controls select {
+    @apply rounded-[5px] border border-input-border bg-canvas p-1 text-text;
+  }
+  .log-output {
+    @apply m-0 max-h-[65vh] list-none overflow-auto py-2.5 font-mono text-xs leading-[1.55] text-[#b9cada];
+  }
+  .log-column-header,
+  .log-line {
+    @apply grid w-full grid-cols-[48px_minmax(0,1fr)] gap-2.5 px-[18px] py-[3px] max-[600px]:grid-cols-[34px_minmax(0,1fr)];
+  }
+  .log-column-header {
+    @apply sticky top-0 z-[1] border-b border-border bg-surface py-[6px] text-[11px] uppercase text-muted;
+  }
+  .log-line {
+    @apply wrap-anywhere hover:bg-[#172535];
+  }
+  .log-line-number {
+    @apply select-none text-[#6f8499];
+  }
+  .log-line--warning > span:last-child {
+    @apply text-warning;
+  }
+  .log-line--error > span:last-child {
+    @apply text-danger;
+  }
+  .log-line--success > span:last-child {
+    @apply text-success;
+  }
+}

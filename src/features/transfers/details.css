@@ -1,0 +1,33 @@
+@layer components {
+  .detail-link {
+    @apply block w-full overflow-hidden bg-transparent p-0 text-left [font:inherit] text-accent-text text-ellipsis whitespace-nowrap;
+  }
+  .drawer-overlay,
+  .confirm-overlay {
+    @apply fixed inset-0 bg-[#02060abb];
+  }
+  .drawer {
+    @apply fixed top-0 right-0 h-screen w-[min(460px,94vw)] overflow-auto border-l border-input-border bg-surface p-7 text-text;
+  }
+  .drawer-close {
+    @apply absolute top-4 right-4;
+  }
+  .confirm-overlay {
+    @apply z-20;
+  }
+  .confirm-dialog {
+    @apply fixed top-1/2 left-1/2 z-[21] w-[min(440px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 rounded-[10px] border border-input-border bg-surface p-6 text-text shadow-[0_20px_70px_#0008];
+  }
+  .confirm-dialog h2 {
+    @apply mt-0 mb-2.5 text-lg;
+  }
+  .confirm-dialog p {
+    @apply m-0 leading-6 text-muted-strong;
+  }
+  .confirm-actions {
+    @apply mt-6 flex justify-end gap-2.5;
+  }
+  .confirm-danger {
+    @apply bg-[#a33240] text-white;
+  }
+}

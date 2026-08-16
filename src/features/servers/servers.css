@@ -1,0 +1,19 @@
+@layer components {
+  .network-controls,
+  .server-form {
+    @apply my-4 flex gap-2.5 max-[700px]:flex-wrap;
+  }
+  .server-form input:first-child {
+    @apply max-w-[180px] max-[700px]:max-w-none max-[700px]:basis-full;
+  }
+  .server-form input:nth-child(2),
+  .server-list-url {
+    @apply flex-1 max-[700px]:basis-full;
+  }
+  .server-list-url {
+    @apply max-w-none;
+  }
+  .connected-server {
+    @apply bg-[#0e1e20];
+  }
+}

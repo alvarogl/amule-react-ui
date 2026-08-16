@@ -1,0 +1,83 @@
+@layer components {
+  .search-form {
+    @apply my-5 flex gap-2.5 max-[700px]:flex-wrap;
+  }
+  .search-form input {
+    @apply flex-1 max-[700px]:basis-full;
+  }
+  .search-form select,
+  .search-filters select,
+  .result-name {
+    @apply rounded-[7px] border border-input-border bg-canvas px-2.5 text-text;
+  }
+  .search-form button,
+  .search-notes-actions button {
+    @apply flex items-center gap-[7px];
+  }
+  .download-category {
+    @apply grid gap-0.5 text-[11px] text-muted-strong;
+  }
+  .download-category select {
+    @apply h-8 min-w-[145px];
+  }
+  .search-filters {
+    @apply mt-[-8px] mb-4 text-muted-strong;
+  }
+  .search-filters summary {
+    @apply cursor-pointer text-[13px];
+  }
+  .search-filters > div {
+    @apply flex flex-wrap gap-2.5 pt-2.5;
+  }
+  .search-filters label {
+    @apply grid gap-[5px] text-xs;
+  }
+  .search-filters input,
+  .search-filters select {
+    @apply w-[116px] p-[7px];
+  }
+  .result-name {
+    @apply max-w-full p-[5px];
+  }
+  .tabs {
+    @apply mb-[15px] flex gap-[7px] overflow-auto;
+  }
+  .tab {
+    @apply flex overflow-hidden rounded-[7px] bg-control;
+  }
+  .tab > button:first-child {
+    @apply whitespace-nowrap bg-transparent text-xs text-[#b9cada];
+  }
+  .tab.active {
+    @apply bg-[#197baa];
+  }
+  .tab.active > button:first-child {
+    @apply text-white;
+  }
+  .close-search {
+    @apply bg-transparent p-[7px] text-[#b9cada];
+  }
+  .tabs small,
+  td small {
+    @apply block text-muted;
+  }
+  .search-notes-dialog {
+    @apply max-h-[min(640px,calc(100vh-32px))] overflow-auto;
+  }
+  .search-notes-actions {
+    @apply mt-[18px] flex items-center justify-between gap-3 text-[13px] text-muted;
+  }
+  .search-notes-list {
+    @apply mt-[18px] grid list-none gap-2.5 p-0;
+  }
+  .search-notes-list li {
+    @apply grid gap-1 rounded-[7px] border border-border p-3;
+  }
+  .search-notes-list span,
+  .search-notes-list small {
+    @apply text-xs text-muted;
+  }
+  .search-notes-list p {
+    @apply my-1 text-text;
+  }
+}

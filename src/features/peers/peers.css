@@ -1,0 +1,48 @@
+@layer components {
+  .peer-detail-grid {
+    @apply grid grid-cols-[minmax(120px,0.4fr)_minmax(0,1fr)] gap-x-4 gap-y-2.5;
+  }
+  .shared-detail-grid {
+    @apply mt-5;
+  }
+  .shared-detail-grid dt,
+  .peer-detail-grid dt {
+    @apply text-muted;
+  }
+  .shared-detail-grid dd,
+  .peer-detail-grid dd {
+    @apply m-0 min-w-0 wrap-anywhere;
+  }
+  .shared-metadata-form {
+    @apply mt-[18px] grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2.5 max-[560px]:grid-cols-1;
+  }
+  .shared-metadata-form label {
+    @apply grid gap-[5px] text-xs text-muted;
+  }
+  .shared-metadata-form select {
+    @apply min-h-10 px-2.5 py-0;
+  }
+  .shared-comment {
+    @apply col-span-full;
+  }
+  .shared-comment + button {
+    @apply col-start-2 max-[560px]:col-auto;
+  }
+  .peer-detail-grid {
+    @apply my-[18px] grid-cols-[132px_minmax(0,1fr)] text-[13px] text-[#b9cada] max-[700px]:grid-cols-1 max-[700px]:gap-y-[3px];
+  }
+  .peer-browse-start,
+  .peer-browse-results {
+    @apply border-t border-border pt-4;
+  }
+  .peer-browse-start {
+    @apply grid gap-2.5;
+  }
+  .peer-browse-start p,
+  .peer-browse-start span {
+    @apply m-0 text-[13px] text-muted;
+  }
+  .peer-browse-table {
+    @apply max-h-[42vh];
+  }
+}

@@ -1,0 +1,28 @@
+@layer components {
+  .kad-status,
+  .kad-form,
+  .kad-store {
+    @apply flex items-center gap-2.5;
+  }
+  .kad-status {
+    @apply my-[18px] flex-wrap text-muted-strong;
+  }
+  .kad-status strong {
+    @apply capitalize text-text;
+  }
+  .kad-warning {
+    @apply border-[#a68231] text-warning;
+  }
+  .kad-store {
+    @apply flex-wrap px-[18px] py-4 text-[13px] text-muted-strong;
+  }
+  .kad-form {
+    @apply px-[18px] py-[14px] max-[700px]:flex-wrap;
+  }
+  .kad-form input:first-child {
+    @apply flex-1 max-[700px]:basis-full;
+  }
+  .kad-form input[type="number"] {
+    @apply w-[120px];
+  }
+}
