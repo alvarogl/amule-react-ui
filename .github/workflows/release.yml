@@ -62,7 +62,7 @@ jobs:
             else throw new Error(`unsupported version bump: ${process.env.BUMP}`);
 
             packageJson.version = `${major}.${minor}.${patch}`;
-            writeFileSync("package.json", `${JSON.stringify(packageJson, null, 2)}\\n`);
+            writeFileSync("package.json", `${JSON.stringify(packageJson, null, 2)}\n`);
             process.stdout.write(packageJson.version);
           ')"
           echo "release_version=$release_version" >> "$GITHUB_OUTPUT"
