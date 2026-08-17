@@ -52,7 +52,7 @@ jobs:
             import { readFileSync, writeFileSync } from "node:fs";
 
             const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
-            const match = /^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$/.exec(packageJson.version);
+            const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(packageJson.version);
             if (!match) throw new Error(`package.json version must be a stable semantic version, got ${packageJson.version}`);
 
             let [major, minor, patch] = match.slice(1).map(Number);
