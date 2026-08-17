@@ -55,8 +55,9 @@ client-side reset endpoint or imply that a stored password can be recovered.
 ## Release and Deployment Boundaries
 
 Use `scripts/install-static-ui.sh --dry-run` before an operator deployment.
-The manual GitHub Release workflow runs only from `main`, validates the package
-version, and publishes verified assets; it must never add a deployment step or
+The manual GitHub Release workflow runs only from `main`, increments the chosen
+semantic version, and commits that version directly to `main` after validation
+before publishing verified assets; it must never add a deployment step or
 production credentials without explicit approval.
 
 ## Agent Feedback & Continuous Improvement

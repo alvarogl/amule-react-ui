@@ -3,16 +3,21 @@ name: Release
 "on":
   workflow_dispatch:
     inputs:
-      version:
-        description: Version from package.json to release (for example, 0.1.0)
+      bump:
+        description: Semantic version component to increment
         required: true
-        type: string
+        default: patch
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ inputs.version }}
+  group: release
   cancel-in-progress: false
 
 jobs:
@@ -38,15 +43,37 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Calculate next release version
+        id: release_version
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          release_version="$(node --input-type=module -e '
+            import { readFileSync, writeFileSync } from "node:fs";
+
+            const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+            const match = /^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$/.exec(packageJson.version);
+            if (!match) throw new Error(`package.json version must be a stable semantic version, got ${packageJson.version}`);
+
+            let [major, minor, patch] = match.slice(1).map(Number);
+            if (process.env.BUMP === "major") [major, minor, patch] = [major + 1, 0, 0];
+            else if (process.env.BUMP === "minor") [minor, patch] = [minor + 1, 0];
+            else if (process.env.BUMP === "patch") patch += 1;
+            else throw new Error(`unsupported version bump: ${process.env.BUMP}`);
+
+            packageJson.version = `${major}.${minor}.${patch}`;
+            writeFileSync("package.json", `${JSON.stringify(packageJson, null, 2)}\\n`);
+            process.stdout.write(packageJson.version);
+          ')"
+          echo "release_version=$release_version" >> "$GITHUB_OUTPUT"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate release version and tag
+      - name: Validate release tag
         env:
-          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_VERSION: ${{ steps.release_version.outputs.release_version }}
         run: |
-          package_version="$(node --input-type=module -e 'import packageJson from "./package.json" with { type: "json" }; process.stdout.write(packageJson.version)')"
-          test "$RELEASE_VERSION" = "$package_version"
           if git ls-remote --exit-code --tags origin "refs/tags/v${RELEASE_VERSION}" >/dev/null; then
             echo "Tag v${RELEASE_VERSION} already exists." >&2
             exit 1
@@ -76,9 +103,21 @@ jobs:
       - name: Test release package
         run: pnpm test:release
 
+      - name: Commit release version to main
+        id: release_commit
+        env:
+          RELEASE_VERSION: ${{ steps.release_version.outputs.release_version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore: release v${RELEASE_VERSION}"
+          git push origin HEAD:main
+          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Create release assets
         env:
-          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_VERSION: ${{ steps.release_version.outputs.release_version }}
         run: |
           scripts/create-release-archive.sh --output-dir release --version "$RELEASE_VERSION"
           (cd release && sha256sum --check *.sha256)
@@ -86,9 +125,10 @@ jobs:
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_VERSION: ${{ steps.release_version.outputs.release_version }}
+          RELEASE_COMMIT: ${{ steps.release_commit.outputs.commit_sha }}
         run: |
           gh release create "v${RELEASE_VERSION}" release/*.tar.gz release/*.sha256 \
-            --target "$GITHUB_SHA" \
+            --target "$RELEASE_COMMIT" \
             --title "aMule React UI v${RELEASE_VERSION}" \
             --generate-notes
