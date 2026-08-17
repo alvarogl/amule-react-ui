@@ -25,6 +25,7 @@
     "lucide-react": "^0.468.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-router-dom": "^7.18.2",
     "recharts": "^3.10.1",
     "sonner": "^2.0.7",
     "zod": "^3.25.76"

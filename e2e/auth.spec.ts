@@ -212,7 +212,8 @@ test("covers core session and mutation workflows", async ({ page }) => {
   await expect.poll(() => deletedHash).toBe(download.hash);
   await expect.poll(async () => page.locator(".transfer-table tbody tr").count()).toBe(0);
 
-  await page.getByRole("button", { name: "Search" }).click();
+  await page.getByRole("link", { name: "Search" }).click();
+  await expect(page).toHaveURL(/#\/search$/);
   await page.getByPlaceholder("Find files").fill("example");
   await page.locator(".search-form").getByRole("button", { name: "Search" }).click();
   await expect(page.getByRole("button", { name: /example finished/ })).toBeVisible();
@@ -220,7 +221,7 @@ test("covers core session and mutation workflows", async ({ page }) => {
   await expect.poll(() => stoppedSearch).toEqual({ search_id: 7, close: true });
   await expect(page.getByRole("button", { name: "Close example" })).not.toBeVisible();
 
-  await page.locator("nav").getByRole("button", { name: "Servers" }).click();
+  await page.locator("nav").getByRole("link", { name: "Servers" }).click();
   await page.getByPlaceholder("IP:port").fill("198.51.100.10:4661");
   await page.getByPlaceholder("Optional server name").fill("Test server");
   await page.getByRole("button", { name: "Add server" }).click();
@@ -231,7 +232,7 @@ test("covers core session and mutation workflows", async ({ page }) => {
       name: "Test server",
     });
 
-  await page.locator("nav").getByRole("button", { name: "Categories" }).click();
+  await page.locator("nav").getByRole("link", { name: "Categories" }).click();
   await page.getByPlaceholder("Category name").fill("Images");
   await page.getByPlaceholder("Optional download path").fill("/downloads/images");
   await page.getByRole("button", { name: "Create" }).click();
@@ -245,32 +246,32 @@ test("covers core session and mutation workflows", async ({ page }) => {
     ["Peers", "Peers"],
     ["Preferences", "Preferences"],
   ]) {
-    await page.locator("nav").getByRole("button", { name: navigation }).click();
+    await page.locator("nav").getByRole("link", { name: navigation }).click();
     await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
   }
 
-  await page.locator("nav").getByRole("button", { name: "Kad" }).click();
+  await page.locator("nav").getByRole("link", { name: "Kad" }).click();
   await page.getByRole("button", { name: "Disconnect" }).click();
   await expect.poll(() => kadDisconnect).toEqual({ network: "kad" });
 
-  await page.locator("nav").getByRole("button", { name: "Logs" }).click();
+  await page.locator("nav").getByRole("link", { name: "Logs" }).click();
   await page.getByRole("button", { name: "Clear active log" }).click();
   await expect(page.getByRole("heading", { name: "Clear aMule log?" })).toBeVisible();
   await page.getByRole("button", { name: "Clear log", exact: true }).click();
   await expect.poll(() => clearedLog).toBe(true);
 
-  await page.locator("nav").getByRole("button", { name: "Shared" }).click();
+  await page.locator("nav").getByRole("link", { name: "Shared" }).click();
   await page.getByLabel("Directory path").fill("/media/test");
   await page.getByRole("button", { name: "Add folder" }).click();
   await expect.poll(() => addedShareRoot).toEqual({ path: "/media/test", recursive: true });
 
-  await page.locator("nav").getByRole("button", { name: "Preferences" }).click();
+  await page.locator("nav").getByRole("link", { name: "Preferences" }).click();
   await expect(page.getByText("Software updates", { exact: true })).toBeVisible();
   await page.getByLabel("Nickname").fill("Updated node");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect.poll(() => savedPreferences).toEqual({ general: { nickname: "Updated node" } });
 
-  await page.locator("nav").getByRole("button", { name: "Peers" }).click();
+  await page.locator("nav").getByRole("link", { name: "Peers" }).click();
   await page.getByRole("button", { name: "Details for Peer One" }).click();
   await page.getByRole("button", { name: "Browse shared files" }).click();
   await expect.poll(() => peerBrowseRequest).toBe(42);
