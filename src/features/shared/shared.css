@@ -5,6 +5,12 @@
   .shared-heading .subtle {
     @apply m-0;
   }
+  .data-table.shared-table {
+    @apply min-w-[990px];
+  }
+  .shared-priority {
+    @apply min-w-[118px];
+  }
   .share-roots {
     @apply mb-4;
   }

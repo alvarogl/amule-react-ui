@@ -8,6 +8,9 @@
   .data-table td {
     @apply overflow-hidden text-ellipsis whitespace-nowrap;
   }
+  .selection-column {
+    @apply overflow-visible text-clip;
+  }
   .data-table input[type="checkbox"],
   .log-live-tail input,
   .preference-toggle input,

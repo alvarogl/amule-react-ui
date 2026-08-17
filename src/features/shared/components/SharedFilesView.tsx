@@ -392,12 +392,12 @@ export function SharedFilesView() {
           <div className="table-wrap">
             <table className="data-table shared-table">
               <colgroup>
-                <col style={{ width: "42%" }} />
-                <col style={{ width: "14%" }} />
-                <col style={{ width: "12%" }} />
-                <col style={{ width: "11%" }} />
-                <col style={{ width: "13%" }} />
-                <col className="actions-column" />
+                <col style={{ width: 330 }} />
+                <col style={{ width: 160 }} />
+                <col style={{ width: 150 }} />
+                <col style={{ width: 120 }} />
+                <col style={{ width: 150 }} />
+                <col className="actions-column actions-column--fixed" />
               </colgroup>
               <thead>
                 <tr>
@@ -430,7 +430,7 @@ export function SharedFilesView() {
                     direction={direction}
                     onSort={toggleSort}
                   />
-                  <th className="actions-column" />
+                  <th className="actions-column actions-column--fixed" />
                 </tr>
               </thead>
               <tbody>
@@ -461,7 +461,7 @@ export function SharedFilesView() {
                     <td>{formatMebibytes(file.size)}</td>
                     <td>{file.complete_sources}</td>
                     <td>{formatRate(file.upload_speed_bps)}</td>
-                    <td className="actions-column">
+                    <td className="actions-column actions-column--fixed">
                       <SharedFileDetails file={file} />
                       <ConfirmDialog
                         trigger={

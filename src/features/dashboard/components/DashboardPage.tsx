@@ -1,4 +1,14 @@
-import { lazy, Suspense, useState, type FormEvent } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChartNoAxesCombined,
@@ -48,6 +58,74 @@ const StatisticsView = lazy(() =>
 );
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
+
+function MobileTransferActions({ label, children }: { label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const updatePosition = () => {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) setPosition({ top: rect.top - 6, left: rect.right });
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        !triggerRef.current?.contains(target) &&
+        !menuRef.current?.contains(target)
+      )
+        setOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
+  return (
+    <div className="transfer-actions__menu">
+      <button
+        ref={triggerRef}
+        className="icon"
+        aria-label={label}
+        aria-expanded={open}
+        title="Actions"
+        onClick={() => {
+          updatePosition();
+          setOpen((current) => !current);
+        }}
+      >
+        <MoreHorizontal size={16} />
+      </button>
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="transfer-actions__popover"
+            style={{ top: position.top, left: position.left }}
+          >
+            {children}
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
@@ -300,18 +378,18 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       <div className="table-wrap">
         <table className="data-table transfer-table">
           <colgroup>
-            <col style={{ width: 46 }} />
+            <col style={{ width: 52 }} />
             <col style={{ width: 330 }} />
             <col style={{ width: 110 }} />
             <col style={{ width: 110 }} />
-            <col style={{ width: 140 }} />
-            <col style={{ width: 185 }} />
+            <col style={{ width: 180 }} />
+            <col style={{ width: 290 }} />
             <col style={{ width: 105 }} />
             <col className="actions-column actions-column--fixed" />
           </colgroup>
           <thead>
             <tr>
-              <th>
+              <th className="selection-column">
                 <input
                   type="checkbox"
                   checked={rows.length > 0 && rows.every((d) => selected.includes(d.hash))}
@@ -368,7 +446,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
               const progress = downloadProgress(d);
               return (
                 <tr key={d.hash}>
-                  <td>
+                  <td className="selection-column">
                     <input
                       type="checkbox"
                       checked={selected.includes(d.hash)}
@@ -408,7 +486,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
                     <span
                       className="transfer-progress-cell__bar"
                       aria-hidden="true"
-                      style={{ width: `${progress ?? 0}%` }}
+                      style={{ "--progress": (progress ?? 0) / 100 } as CSSProperties}
                     />
                     <span className="transfer-progress-cell__text">
                       {formatMebibytes(d.size_done)} / {formatMebibytes(d.size)} (
@@ -418,16 +496,9 @@ function Transfers({ downloads }: { downloads: Download[] }) {
                   <td>{formatRate(d.speed_bps)}</td>
                   <td className="actions-column actions-column--fixed">
                     <div className="transfer-actions__inline">{transferActions(d)}</div>
-                    <details className="transfer-actions__menu">
-                      <summary
-                        className="icon"
-                        aria-label={`Actions for ${d.name}`}
-                        title="Actions"
-                      >
-                        <MoreHorizontal size={16} />
-                      </summary>
-                      <div>{transferActions(d)}</div>
-                    </details>
+                    <MobileTransferActions label={`Actions for ${d.name}`}>
+                      {transferActions(d)}
+                    </MobileTransferActions>
                   </td>
                 </tr>
               );

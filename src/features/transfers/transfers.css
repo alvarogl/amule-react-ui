@@ -3,6 +3,9 @@
   .bulk-tools {
     @apply flex gap-[9px] border-b border-border px-[18px] py-[14px] max-[700px]:flex-wrap;
   }
+  .upload-filter {
+    @apply px-[18px];
+  }
   .transfer-tools input:first-child {
     @apply flex-1;
   }
@@ -40,7 +43,9 @@
     @apply relative isolate overflow-hidden;
   }
   .transfer-progress-cell__bar {
-    @apply pointer-events-none absolute inset-y-0 left-0 z-0 min-w-0 bg-[#237a9d] opacity-28 transition-[width] duration-[220ms];
+    @apply pointer-events-none absolute inset-[6px] z-0 rounded-[5px] bg-[#237a9d] opacity-28 transition-transform duration-[220ms];
+    transform: scaleX(var(--progress));
+    transform-origin: left;
   }
   .transfer-progress-cell__text {
     @apply relative z-[1] whitespace-nowrap;
@@ -48,11 +53,9 @@
   .transfer-actions__menu {
     @apply relative hidden max-[760px]:inline-block;
   }
-  .transfer-actions__menu summary {
-    @apply list-none;
-  }
-  .transfer-actions__menu > div {
-    @apply absolute right-0 z-[4] flex gap-[5px] rounded-[7px] border border-input-border bg-surface p-[6px] shadow-[0_8px_24px_#0008];
+  .transfer-actions__popover {
+    @apply fixed z-50 flex gap-[5px] rounded-[7px] border border-input-border bg-surface p-[6px] shadow-[0_8px_24px_#0008];
+    transform: translate(-100%, -100%);
   }
   .transfer-actions__inline {
     @apply max-[760px]:hidden;
