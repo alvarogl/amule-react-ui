@@ -1,0 +1,55 @@
+@layer components {
+  .drawer h3 {
+    @apply mt-[26px] text-sm text-muted;
+  }
+  .drawer ul {
+    @apply pl-[18px] leading-6;
+  }
+  .drawer li {
+    @apply flex items-center justify-between gap-2.5;
+  }
+  .detail-stats {
+    @apply m-0 grid gap-2;
+  }
+  .detail-stats div {
+    @apply flex justify-between gap-3;
+  }
+  .detail-stats dt {
+    @apply text-muted;
+  }
+  .detail-stats dd {
+    @apply m-0 text-right;
+  }
+  .detail-part-progress {
+    @apply mt-3 grid grid-cols-[repeat(auto-fit,minmax(5px,1fr))] gap-0.5;
+  }
+  .detail-part {
+    @apply min-h-2 rounded-[2px] bg-border;
+  }
+  .detail-part--complete {
+    @apply bg-[#4fb286];
+  }
+  .detail-part--transferring {
+    @apply bg-accent-text;
+  }
+  .detail-part--corrupt {
+    @apply bg-[#d65b68];
+  }
+  .detail-actions {
+    @apply my-2.5 flex flex-wrap gap-[6px];
+  }
+  .detail-action,
+  .detail-actions .muted {
+    @apply px-[7px] py-[5px] text-[11px];
+  }
+  .detail-source-list {
+    @apply flex flex-wrap gap-[5px] text-xs text-muted;
+  }
+  .detail-source-list span,
+  .detail-a4af-status span {
+    @apply rounded bg-control px-[6px] py-0.5;
+  }
+  .detail-a4af-status {
+    @apply flex items-center gap-2 text-[13px] text-muted;
+  }
+}

@@ -1,57 +1,19 @@
-.network-controls,
-.server-form {
-  display: flex;
-  gap: 10px;
-  margin: 16px 0;
-}
-.muted {
-  background: #203246;
-  color: #d7e1ed;
-}
-.server-form input:first-child {
-  max-width: 180px;
-}
-.server-form input:nth-child(2) {
-  flex: 1;
-}
-.server-form .server-list-url {
-  max-width: none;
-  flex: 1;
-}
-.server-select {
-  min-width: 88px;
-  padding: 6px;
-  border-radius: 5px;
-  border: 1px solid #395066;
-  background: #0b1017;
-  color: #d7e1ed;
-}
-.danger {
-  color: #ff98a1;
-}
-.active-action {
-  color: #7bdbff;
-}
-.connected-server {
-  background: #0e1e20;
-}
-.connected-mark {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 2px 6px;
-  border: 1px solid #2d7a5d;
-  border-radius: 4px;
-  color: #52e0a0;
-  font-size: 11px;
-  vertical-align: middle;
-}
-@media (max-width: 700px) {
+@layer components {
   .network-controls,
   .server-form {
-    flex-wrap: wrap;
+    @apply my-4 flex gap-2.5 max-[700px]:flex-wrap;
   }
-  .server-form input {
-    flex: 1 1 100% !important;
-    max-width: none !important;
+  .server-form input:first-child {
+    @apply max-w-[180px] max-[700px]:max-w-none max-[700px]:basis-full;
+  }
+  .server-form input:nth-child(2),
+  .server-list-url {
+    @apply flex-1 max-[700px]:basis-full;
+  }
+  .server-list-url {
+    @apply max-w-none;
+  }
+  .connected-server {
+    @apply bg-[#0e1e20];
   }
 }

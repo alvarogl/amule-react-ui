@@ -5,7 +5,9 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", "coverage"] },
+  {
+    ignores: ["dist", "node_modules", "coverage", "playwright-report", "test-results", "release"],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -26,6 +28,10 @@ export default tseslint.config(
   {
     files: ["src/**/*.test.ts"],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
+  },
+  {
+    files: ["e2e/**/*.ts", "*.config.ts"],
+    languageOptions: { globals: globals.node },
   },
   {
     files: ["src/features/auth/session-context.tsx"],

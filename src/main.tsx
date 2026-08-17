@@ -6,22 +6,6 @@ import { App } from "@/app/App";
 import { queryClient } from "@/app/query-client";
 import { SessionProvider } from "@/features/auth/session-context";
 import "@/app/styles.css";
-import "@/app/layout.css";
-import "@/app/navigation.css";
-import "@/app/status.css";
-import "@/features/transfers/transfers.css";
-import "@/features/transfers/details.css";
-import "@/features/search/search.css";
-import "@/features/servers/servers.css";
-import "@/features/categories/categories.css";
-import "@/features/kad/kad.css";
-import "@/features/logs/logs.css";
-import "@/features/shared/shared.css";
-import "@/features/statistics/statistics.css";
-import "@/features/preferences/preferences.css";
-import "@/features/peers/peers.css";
-import "@/shared/styles/data-table.css";
-import "@/shared/styles/confirm-dialog.css";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

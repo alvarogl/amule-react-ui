@@ -1,0 +1,138 @@
+@layer components {
+  .loading,
+  .login {
+    @apply grid min-h-screen place-items-center;
+  }
+  .login form {
+    @apply grid w-[min(380px,calc(100vw-32px))] gap-4 rounded-xl border border-[#27394c] bg-surface p-8;
+  }
+  .login-logo {
+    @apply size-16 justify-self-center object-contain;
+  }
+  .login h1 {
+    @apply m-0 text-center;
+  }
+  .login label {
+    @apply grid gap-[7px] text-sm;
+  }
+  .login-help {
+    @apply text-[13px] leading-6 text-muted;
+  }
+  .login-help summary {
+    @apply cursor-pointer font-semibold text-[#b9d9eb];
+  }
+  .login-help p {
+    @apply mt-2 mb-0;
+  }
+  .login-help code {
+    @apply text-text;
+  }
+  .error,
+  .danger {
+    @apply text-danger;
+  }
+  .muted {
+    @apply bg-control text-text;
+  }
+  .shell {
+    @apply min-h-screen bg-canvas;
+  }
+  .query-error {
+    @apply content-center gap-[14px] text-danger;
+  }
+  .query-notice {
+    @apply flex items-center justify-between gap-[14px] px-[18px] py-4 text-danger;
+  }
+  header {
+    @apply flex h-14 items-center justify-between border-b border-[#223247] bg-surface-raised px-[22px] max-[700px]:px-3;
+  }
+  header > div {
+    @apply flex items-center gap-2.5;
+  }
+  .app-brand {
+    @apply min-w-0;
+  }
+  .app-logo {
+    @apply size-[30px] shrink-0 object-contain;
+  }
+  .live,
+  .connected-mark,
+  .kad-warning {
+    @apply rounded border px-[5px] py-0.5 text-[11px];
+  }
+  .live,
+  .connected-mark {
+    @apply border-[#2d7a5d] text-success;
+  }
+  .statusline {
+    @apply text-[13px] text-muted-strong;
+  }
+  .statusline span {
+    @apply max-[700px]:hidden;
+  }
+  .id-status.high {
+    @apply text-success;
+  }
+  .id-status.low {
+    @apply text-danger;
+  }
+  .id-status.unknown {
+    @apply text-warning;
+  }
+  .icon {
+    @apply inline-grid place-items-center bg-control p-[7px] text-text;
+  }
+  .shell nav {
+    @apply flex gap-[5px] border-b border-[#1c2b3b] px-[22px] py-3 max-[700px]:overflow-auto max-[700px]:p-2.5;
+  }
+  .shell nav button {
+    @apply inline-flex items-center gap-[7px] whitespace-nowrap bg-transparent text-muted-strong;
+  }
+  .shell nav .active,
+  .active-action {
+    @apply bg-accent-soft text-accent-text;
+  }
+  .content {
+    @apply mx-auto w-[90vw] max-w-none px-[22px] py-[30px] max-[700px]:w-auto max-[700px]:px-3 max-[700px]:py-5;
+  }
+  .content h1 {
+    @apply mt-0 mb-1.5;
+  }
+  .subtle {
+    @apply flex items-center gap-[7px] text-muted;
+  }
+  .empty {
+    @apply p-5 text-muted;
+  }
+  .metrics {
+    @apply my-[25px] grid grid-cols-4 gap-[14px] max-[700px]:grid-cols-2;
+  }
+  .metric,
+  .panel {
+    @apply rounded-[10px] border border-border bg-surface;
+  }
+  .metric {
+    @apply p-[18px];
+  }
+  .metric span {
+    @apply block text-[13px] text-muted;
+  }
+  .metric strong {
+    @apply mt-[7px] block text-[22px];
+  }
+  .panel {
+    @apply overflow-hidden;
+  }
+  .panel-title {
+    @apply flex items-center justify-between border-b border-border px-[18px] py-4;
+  }
+  .panel h2 {
+    @apply m-0 text-base;
+  }
+  .panel-title span {
+    @apply text-[13px] text-muted;
+  }
+  .badge {
+    @apply rounded bg-control px-[7px] py-[3px] text-xs;
+  }
+}

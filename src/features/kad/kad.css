@@ -1,55 +1,28 @@
-.kad-status,
-.kad-form,
-.kad-store {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.kad-status {
-  flex-wrap: wrap;
-  margin: 18px 0;
-  color: #9db0c4;
-}
-.kad-status strong {
-  color: #d7e1ed;
-  text-transform: capitalize;
-}
-.kad-status .muted,
-.kad-form button {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-.kad-warning {
-  padding: 2px 5px;
-  border: 1px solid #a68231;
-  border-radius: 4px;
-  color: #f4c95d;
-  font-size: 11px;
-}
-.kad-panel {
-  margin-top: 16px;
-}
-.kad-store {
-  flex-wrap: wrap;
-  padding: 16px 18px;
-  color: #9db0c4;
-  font-size: 13px;
-}
-.kad-form {
-  padding: 14px 18px;
-}
-.kad-form input:first-child {
-  flex: 1;
-}
-.kad-form input[type="number"] {
-  width: 120px;
-}
-@media (max-width: 700px) {
+@layer components {
+  .kad-status,
+  .kad-form,
+  .kad-store {
+    @apply flex items-center gap-2.5;
+  }
+  .kad-status {
+    @apply my-[18px] flex-wrap text-muted-strong;
+  }
+  .kad-status strong {
+    @apply capitalize text-text;
+  }
+  .kad-warning {
+    @apply border-[#a68231] text-warning;
+  }
+  .kad-store {
+    @apply flex-wrap px-[18px] py-4 text-[13px] text-muted-strong;
+  }
   .kad-form {
-    flex-wrap: wrap;
+    @apply px-[18px] py-[14px] max-[700px]:flex-wrap;
   }
   .kad-form input:first-child {
-    flex-basis: 100%;
+    @apply flex-1 max-[700px]:basis-full;
+  }
+  .kad-form input[type="number"] {
+    @apply w-[120px];
   }
 }

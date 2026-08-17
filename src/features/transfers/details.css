@@ -1,117 +1,33 @@
-.detail-link {
-  display: block;
-  width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 0;
-  background: none;
-  color: #7bdbff;
-  font: inherit;
-  text-align: left;
-}
-.drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: #02060abb;
-}
-.drawer {
-  position: fixed;
-  right: 0;
-  top: 0;
-  height: 100vh;
-  width: min(460px, 94vw);
-  overflow: auto;
-  background: #121b26;
-  border-left: 1px solid #395066;
-  padding: 28px;
-  color: #d7e1ed;
-}
-.drawer h3 {
-  margin-top: 26px;
-  font-size: 14px;
-  color: #91a4b8;
-}
-.drawer ul {
-  padding-left: 18px;
-  line-height: 1.5;
-}
-.drawer li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.detail-stats {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-}
-.detail-stats div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-.detail-stats dt {
-  color: #91a4b8;
-}
-.detail-stats dd {
-  margin: 0;
-  text-align: right;
-}
-.detail-part-progress {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(5px, 1fr));
-  gap: 2px;
-  margin-top: 12px;
-}
-.detail-part {
-  min-height: 8px;
-  border-radius: 2px;
-  background: #26394d;
-}
-.detail-part--complete {
-  background: #4fb286;
-}
-.detail-part--transferring {
-  background: #7bdbff;
-}
-.detail-part--corrupt {
-  background: #d65b68;
-}
-.detail-action,
-.detail-actions .muted {
-  padding: 5px 7px;
-  font-size: 11px;
-}
-.detail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0;
-}
-.detail-source-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  color: #91a4b8;
-  font-size: 12px;
-}
-.detail-source-list span,
-.detail-a4af-status span {
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: #203246;
-}
-.detail-a4af-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #91a4b8;
-  font-size: 13px;
-}
-.drawer-close {
-  position: absolute;
-  right: 16px;
-  top: 16px;
+@layer components {
+  .detail-link {
+    @apply block w-full overflow-hidden bg-transparent p-0 text-left [font:inherit] text-accent-text text-ellipsis whitespace-nowrap;
+  }
+  .drawer-overlay,
+  .confirm-overlay {
+    @apply fixed inset-0 bg-[#02060abb];
+  }
+  .drawer {
+    @apply fixed top-0 right-0 h-screen w-[min(460px,94vw)] overflow-auto border-l border-input-border bg-surface p-7 text-text;
+  }
+  .drawer-close {
+    @apply absolute top-4 right-4;
+  }
+  .confirm-overlay {
+    @apply z-20;
+  }
+  .confirm-dialog {
+    @apply fixed top-1/2 left-1/2 z-[21] w-[min(440px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 rounded-[10px] border border-input-border bg-surface p-6 text-text shadow-[0_20px_70px_#0008];
+  }
+  .confirm-dialog h2 {
+    @apply mt-0 mb-2.5 text-lg;
+  }
+  .confirm-dialog p {
+    @apply m-0 leading-6 text-muted-strong;
+  }
+  .confirm-actions {
+    @apply mt-6 flex justify-end gap-2.5;
+  }
+  .confirm-danger {
+    @apply bg-[#a33240] text-white;
+  }
 }

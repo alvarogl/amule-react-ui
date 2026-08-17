@@ -1,0 +1,43 @@
+@layer components {
+  .table-wrap {
+    @apply overflow-x-auto;
+  }
+  .data-table {
+    @apply min-w-[720px] table-fixed;
+  }
+  .data-table td {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+  .selection-column {
+    @apply overflow-visible text-clip;
+  }
+  .data-table input[type="checkbox"],
+  .log-live-tail input,
+  .preference-toggle input,
+  .preference-advanced-toggle input,
+  .share-root-form label input {
+    @apply size-4 p-0 align-middle;
+  }
+  .data-header {
+    @apply relative !p-0;
+  }
+  .header-sort {
+    @apply flex w-full items-center justify-between gap-2 bg-transparent px-[18px] py-3 text-left [font:inherit] text-muted-strong hover:text-text;
+  }
+  .actions-column {
+    @apply w-max min-w-max overflow-visible whitespace-nowrap;
+  }
+  th.actions-column,
+  td.actions-column {
+    @apply px-2.5 text-clip;
+  }
+  .actions-column--compact {
+    @apply w-[1%];
+  }
+  .actions-column--fixed {
+    @apply w-20;
+  }
+  .data-table.server-table {
+    @apply table-auto;
+  }
+}

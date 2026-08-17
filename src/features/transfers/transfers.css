@@ -1,141 +1,63 @@
-.transfer-tools {
-  display: flex;
-  gap: 9px;
-  padding: 14px 18px;
-  border-bottom: 1px solid #26394d;
-}
-.transfer-tools input:first-child {
-  flex: 1;
-}
-.transfer-tools input:last-child {
-  max-width: 170px;
-}
-.transfer-tools button {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-.transfer-tools__spinner {
-  animation: transfer-tools-spin 0.8s linear infinite;
-}
-@keyframes transfer-tools-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.bulk-tools {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 10px 18px;
-  border-bottom: 1px solid #26394d;
-}
-.bulk-tools span {
-  margin-right: auto;
-  color: #91a4b8;
-  font-size: 13px;
-}
-.bulk-tools button {
-  padding: 6px 9px;
-  font-size: 12px;
-}
-.sort {
-  padding: 0;
-  background: none;
-  color: #9db0c4;
-  font-size: inherit;
-}
-@media (max-width: 700px) {
+@layer components {
   .transfer-tools,
   .bulk-tools {
-    flex-wrap: wrap;
+    @apply flex gap-[9px] border-b border-border px-[18px] py-[14px] max-[700px]:flex-wrap;
+  }
+  .upload-filter {
+    @apply px-[18px];
+  }
+  .transfer-tools input:first-child {
+    @apply flex-1;
   }
   .transfer-tools input:last-child {
-    max-width: none;
-    flex: 1 1 100%;
+    @apply max-w-[170px] max-[700px]:max-w-none max-[700px]:basis-full;
   }
-}
-.bulk-priority {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #91a4b8;
-  font-size: 12px;
-}
-.bulk-priority select {
-  min-width: 136px;
-  background: #203246;
-  color: #d7e1ed;
-  border: 1px solid #395066;
-  border-radius: 5px;
-  padding: 6px;
-}
-.bulk-priority select:disabled {
-  opacity: 0.45;
-  color: #91a4b8;
-  cursor: not-allowed;
-}
-.upload-panel {
-  margin-top: 16px;
-}
-.upload-filter {
-  padding: 10px 18px;
-  border-bottom: 1px solid #26394d;
-}
-.upload-filter input {
-  width: min(360px, 100%);
-}
-.bulk-tools .bulk-remove {
-  background: #7f2733;
-  color: #ffe2e5;
-}
-.transfer-progress-cell {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-}
-.transfer-progress-cell__bar {
-  position: absolute;
-  z-index: 0;
-  inset: 0 auto 0 0;
-  min-width: 0;
-  background: #237a9d;
-  opacity: 0.28;
-  pointer-events: none;
-  transition: width 220ms ease;
-}
-.transfer-progress-cell__text {
-  position: relative;
-  z-index: 1;
-  white-space: nowrap;
-}
-.transfer-actions__menu {
-  display: none;
-  position: relative;
-}
-.transfer-actions__menu summary {
-  list-style: none;
-}
-.transfer-actions__menu summary::-webkit-details-marker {
-  display: none;
-}
-.transfer-actions__menu > div {
-  position: absolute;
-  z-index: 4;
-  right: 0;
-  display: flex;
-  gap: 5px;
-  padding: 6px;
-  border: 1px solid #395066;
-  border-radius: 7px;
-  background: #121b26;
-  box-shadow: 0 8px 24px #0008;
-}
-@media (max-width: 760px) {
-  .transfer-actions__inline {
-    display: none;
+  .transfer-tools button,
+  .shared-heading button,
+  .share-root-form button {
+    @apply inline-flex items-center gap-[7px];
+  }
+  .transfer-tools__spinner,
+  .spin {
+    @apply animate-spin;
+  }
+  .bulk-tools {
+    @apply items-center py-2.5;
+  }
+  .bulk-tools span {
+    @apply mr-auto text-[13px] text-muted;
+  }
+  .bulk-tools button {
+    @apply px-[9px] py-[6px] text-xs;
+  }
+  .bulk-priority {
+    @apply flex items-center gap-[6px] text-xs text-muted;
+  }
+  .bulk-priority select {
+    @apply min-w-[136px] rounded-[5px] border border-input-border bg-control p-[6px] text-text;
+  }
+  .bulk-remove {
+    @apply bg-[#7f2733] text-[#ffe2e5];
+  }
+  .transfer-progress-cell {
+    @apply relative isolate overflow-hidden;
+  }
+  .transfer-progress-cell__bar {
+    @apply pointer-events-none absolute inset-[6px] z-0 rounded-[5px] bg-[#237a9d] opacity-28 transition-transform duration-[220ms];
+    transform: scaleX(var(--progress));
+    transform-origin: left;
+  }
+  .transfer-progress-cell__text {
+    @apply relative z-[1] whitespace-nowrap;
   }
   .transfer-actions__menu {
-    display: inline-block;
+    @apply relative hidden max-[760px]:inline-block;
+  }
+  .transfer-actions__popover {
+    @apply fixed z-50 flex gap-[5px] rounded-[7px] border border-input-border bg-surface p-[6px] shadow-[0_8px_24px_#0008];
+    transform: translate(-100%, -100%);
+  }
+  .transfer-actions__inline {
+    @apply max-[760px]:hidden;
   }
 }

@@ -226,6 +226,7 @@ export function PeersView() {
               <button
                 key={item}
                 className={filter === item ? "active" : "muted"}
+                aria-pressed={filter === item}
                 onClick={() => setFilter(item)}
               >
                 {item === "all" ? "All" : item[0].toUpperCase() + item.slice(1)}

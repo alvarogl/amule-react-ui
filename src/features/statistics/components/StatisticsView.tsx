@@ -45,9 +45,15 @@ function formatStatisticValue(value: StatisticValue): string {
   }
 }
 
+const statisticPlaceholder =
+  /%(?:[-+ #0]*\d*(?:\.\d+)?(?:hh|h|ll|l|L|z|j|t)?[diuoxXfFeEgGaAcsp%])/g;
+const statisticPlaceholderPattern =
+  /%(?:[-+ #0]*\d*(?:\.\d+)?(?:hh|h|ll|l|L|z|j|t)?[diuoxXfFeEgGaAcsp%])/;
+
 function formatStatisticLabel(node: StatisticNode) {
   let index = 0;
-  return node.label.replace(/%s/g, () => {
+  return node.label.replace(statisticPlaceholder, (placeholder) => {
+    if (placeholder === "%%") return "%";
     const value = node.values[index++];
     if (!value) return "—";
     const main = formatStatisticValue(value);
@@ -57,7 +63,7 @@ function formatStatisticLabel(node: StatisticNode) {
 
 function statisticName(node: StatisticNode) {
   if (node.raw) return node.raw;
-  return node.label.replace(/\s*:?\s*%s/g, "").replace(/\s+:$/, "");
+  return node.label.replace(statisticPlaceholder, "").replace(/\s+:$/, "");
 }
 
 function statisticValue(node: StatisticNode) {
@@ -96,13 +102,21 @@ function findNode(nodes: StatisticNode[], keys: string[]): StatisticNode | undef
 function StatisticsTreeNode({ node, depth = 0 }: { node: StatisticNode; depth?: number }) {
   const label = statisticName(node);
   const key = node.key ?? `${node.label}-${depth}`;
-  if (!node.children.length)
+  if (!node.children.length) {
+    const hasPlaceholders = statisticPlaceholderPattern.test(node.label);
     return (
       <div className="statistics-leaf">
-        <span>{label}</span>
-        <strong>{statisticValue(node)}</strong>
+        {hasPlaceholders ? (
+          <span>{formatStatisticLabel(node)}</span>
+        ) : (
+          <>
+            <span>{label}</span>
+            <strong>{statisticValue(node)}</strong>
+          </>
+        )}
       </div>
     );
+  }
 
   return (
     <Accordion.Item className="statistics-node" value={key}>
@@ -328,6 +342,7 @@ export function StatisticsView() {
               <button
                 key={name}
                 className={graph === name ? "active" : "muted"}
+                aria-pressed={graph === name}
                 onClick={() => setGraph(name)}
               >
                 {graphLabels[name]}
