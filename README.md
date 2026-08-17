@@ -132,10 +132,34 @@ pnpm are needed only when building from a checkout.
 ### Publish a GitHub Release
 
 The `Release` workflow is manual-only. From `main`, use **Actions → Release →
-Run workflow**, enter the exact version in `package.json`, and wait for its
-quality, deployment, browser, and archive checks to pass. It then creates tag
-`v<version>` and attaches the archive plus checksum to a generated GitHub
-Release. It does not deploy to any aMule host.
+Run workflow** and select the semantic version component to increment. After
+the quality, deployment, browser, and archive checks pass, it commits the new
+version, creates tag `v<version>`, and attaches the archive plus checksum to a
+generated GitHub Release. It does not deploy to any aMule host.
+
+### Docker Hub releases
+
+UI versions use independent semantic versioning. The bundled aMule source is
+recorded separately in [docker/amule-version.env](docker/amule-version.env).
+Each published image has an immutable combined tag such as
+`0.2.0-amule-3.0.1`; a development aMule commit is labelled honestly, for
+example `0.2.0-amule-git-d8d5720b`. `latest` is a moving alias for the newest
+stable image and is unsuitable for deployments.
+
+To enable publishing, create the Docker Hub repository and configure these
+GitHub Actions values:
+
+- Repository variable `DOCKERHUB_IMAGE` — image name without a registry, for
+  example `alvarogl/amule-console`.
+- Repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` — a Docker Hub
+  username and access token with permission to push that repository.
+
+The Docker Hub job publishes `linux/amd64` and `linux/arm64` after each GitHub
+Release only when **Publish the multi-platform image to Docker Hub** is selected
+when starting a release. It is skipped until `DOCKERHUB_IMAGE` is configured;
+the publish will then require both Docker Hub secrets. The workflow derives the
+exact combined image tag automatically from the new UI version and the pinned
+aMule version; operators never enter an image tag manually.
 
 ## License
 
