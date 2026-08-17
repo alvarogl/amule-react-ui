@@ -14,7 +14,7 @@ name: Release
           - patch
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release
@@ -27,10 +27,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      - name: Create release app token
+        id: release_token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: Check out source
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          token: ${{ steps.release_token.outputs.token }}
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
@@ -108,8 +116,8 @@ jobs:
         env:
           RELEASE_VERSION: ${{ steps.release_version.outputs.release_version }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "${{ steps.release_token.outputs.app-slug }}[bot]"
+          git config user.email "${{ steps.release_token.outputs.app-slug }}[bot]@users.noreply.github.com"
           git add package.json
           git commit -m "chore: release v${RELEASE_VERSION}"
           git push origin HEAD:main
@@ -124,7 +132,7 @@ jobs:
 
       - name: Publish GitHub Release
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.release_token.outputs.token }}
           RELEASE_VERSION: ${{ steps.release_version.outputs.release_version }}
           RELEASE_COMMIT: ${{ steps.release_commit.outputs.commit_sha }}
         run: |
