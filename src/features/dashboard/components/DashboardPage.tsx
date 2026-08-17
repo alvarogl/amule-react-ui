@@ -10,6 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, NavLink, Outlet, useOutletContext } from "react-router-dom";
 import {
   ChartNoAxesCombined,
   Check,
@@ -36,20 +37,13 @@ import { api, type Download } from "@/shared/api/amule-api";
 import { queryKeys } from "@/shared/api/query-keys";
 import { useSession } from "@/features/auth/session-context";
 import { useLiveUpdates } from "@/shared/realtime/use-live-updates";
-import { SearchView } from "@/features/search/components/SearchView";
 import { ServersView } from "@/features/servers/components/ServersView";
-import { CategoriesView } from "@/features/categories/components/CategoriesView";
 import { TransferDetails } from "@/features/transfers/components/TransferDetails";
 import { SortableHeader } from "@/shared/components/SortableHeader";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { formatMebibytes, formatRate } from "@/shared/lib/formatters";
 import { useSortState } from "@/shared/hooks/use-sort-state";
 import { getErrorMessage } from "@/shared/lib/errors";
-import { SharedFilesView } from "@/features/shared/components/SharedFilesView";
-import { KadView } from "@/features/kad/components/KadView";
-import { LogsView } from "@/features/logs/components/LogsView";
-import { PreferencesView } from "@/features/preferences/components/PreferencesView";
-import { PeersView } from "@/features/peers/components/PeersView";
 
 const StatisticsView = lazy(() =>
   import("@/features/statistics/components/StatisticsView").then(({ StatisticsView }) => ({
@@ -58,6 +52,7 @@ const StatisticsView = lazy(() =>
 );
 
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
+type Status = Awaited<ReturnType<typeof api.status>>;
 
 function MobileTransferActions({ label, children }: { label: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -625,26 +620,53 @@ function Uploads() {
   );
 }
 export function DashboardPage() {
-  const { logout } = useSession();
-  const [view, setView] = useState<
-    | "dashboard"
-    | "search"
-    | "servers"
-    | "categories"
-    | "shared"
-    | "kad"
-    | "logs"
-    | "statistics"
-    | "preferences"
-    | "peers"
-  >("dashboard");
-  const status = useQuery({ queryKey: queryKeys.status, queryFn: api.status });
+  const status = useOutletContext<Status>();
   const downloads = useQuery({
     queryKey: queryKeys.downloads,
     queryFn: api.downloads,
     refetchInterval: 5_000,
     refetchIntervalInBackground: false,
   });
+  const s = status;
+  return (
+    <div className="content">
+      <h1>Dashboard</h1>
+      <p className="subtle">
+        <ShieldCheck size={16} /> Local API session ·{" "}
+        {s.ec_connected ? "daemon connected" : "daemon unavailable"}
+      </p>
+      <div className="metrics">
+        <Metric label="Download" value={formatRate(s.speeds.download_bps)} />
+        <Metric label="Upload" value={formatRate(s.speeds.upload_bps)} />
+        <Metric label="Sources" value={String(s.queue.total_source_count)} />
+        <Metric label="Upload queue" value={String(s.queue.upload_queue_length)} />
+      </div>
+      <Transfers downloads={downloads.data?.downloads ?? []} />
+      <Uploads />
+    </div>
+  );
+}
+
+export function ServersPage() {
+  const status = useOutletContext<Status>();
+  return (
+    <ServersView
+      connectedServerName={status.ed2k.state === "connected" ? status.ed2k.server_name : undefined}
+    />
+  );
+}
+
+export function StatisticsPage() {
+  return (
+    <Suspense fallback={<main className="loading">Loading statistics…</main>}>
+      <StatisticsView />
+    </Suspense>
+  );
+}
+
+export function DashboardShell() {
+  const { logout } = useSession();
+  const status = useQuery({ queryKey: queryKeys.status, queryFn: api.status });
   useLiveUpdates();
   if (status.isPending) return <main className="loading">Connecting to aMule…</main>;
   if (status.isError)
@@ -658,63 +680,25 @@ export function DashboardPage() {
   const s = status.data;
   const idState = s.ed2k.state !== "connected" ? "unknown" : s.ed2k.low_id ? "low" : "high";
   const navigation = [
-    { id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
-    { id: "search" as const, label: "Search", icon: Search },
-    { id: "servers" as const, label: "Servers", icon: Server },
-    { id: "categories" as const, label: "Categories", icon: FolderTree },
-    { id: "shared" as const, label: "Shared", icon: Share2 },
-    { id: "kad" as const, label: "Kad", icon: Network },
-    { id: "logs" as const, label: "Logs", icon: ScrollText },
-    { id: "statistics" as const, label: "Statistics", icon: ChartNoAxesCombined },
-    { id: "peers" as const, label: "Peers", icon: UsersRound },
+    { to: "/", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/search", label: "Search", icon: Search },
+    { to: "/servers", label: "Servers", icon: Server },
+    { to: "/categories", label: "Categories", icon: FolderTree },
+    { to: "/shared", label: "Shared", icon: Share2 },
+    { to: "/kad", label: "Kad", icon: Network },
+    { to: "/logs", label: "Logs", icon: ScrollText },
+    { to: "/statistics", label: "Statistics", icon: ChartNoAxesCombined },
+    { to: "/peers", label: "Peers", icon: UsersRound },
   ];
-  const body =
-    view === "search" ? (
-      <SearchView />
-    ) : view === "servers" ? (
-      <ServersView
-        connectedServerName={s.ed2k.state === "connected" ? s.ed2k.server_name : undefined}
-      />
-    ) : view === "categories" ? (
-      <CategoriesView />
-    ) : view === "shared" ? (
-      <SharedFilesView />
-    ) : view === "kad" ? (
-      <KadView />
-    ) : view === "logs" ? (
-      <LogsView />
-    ) : view === "statistics" ? (
-      <Suspense fallback={<main className="loading">Loading statistics…</main>}>
-        <StatisticsView />
-      </Suspense>
-    ) : view === "preferences" ? (
-      <PreferencesView />
-    ) : view === "peers" ? (
-      <PeersView />
-    ) : (
-      <div className="content">
-        <h1>Dashboard</h1>
-        <p className="subtle">
-          <ShieldCheck size={16} /> Local API session ·{" "}
-          {s.ec_connected ? "daemon connected" : "daemon unavailable"}
-        </p>
-        <div className="metrics">
-          <Metric label="Download" value={formatRate(s.speeds.download_bps)} />
-          <Metric label="Upload" value={formatRate(s.speeds.upload_bps)} />
-          <Metric label="Sources" value={String(s.queue.total_source_count)} />
-          <Metric label="Upload queue" value={String(s.queue.upload_queue_length)} />
-        </div>
-        <Transfers downloads={downloads.data?.downloads ?? []} />
-        <Uploads />
-      </div>
-    );
   return (
     <main className="shell">
       <header>
         <div className="app-brand">
-          <img className="app-logo" src={amuleLogo} alt="" />
-          <strong>aMule Console</strong>
-          <span className="live">LIVE</span>
+          <Link to="/" aria-label="aMule Console dashboard">
+            <img className="app-logo" src={amuleLogo} alt="" />
+            <strong>aMule Console</strong>
+            <span className="live">LIVE</span>
+          </Link>
         </div>
         <div className="statusline">
           <span className="connected-header" title={s.ed2k.server_name}>
@@ -730,21 +714,18 @@ export function DashboardPage() {
         </div>
       </header>
       <nav>
-        {navigation.map(({ id, label, icon: Icon }) => (
-          <button key={id} className={view === id ? "active" : ""} onClick={() => setView(id)}>
+        {navigation.map(({ to, label, icon: Icon }) => (
+          <NavLink key={to} to={to} end={to === "/"}>
             <Icon size={17} aria-hidden="true" />
             {label}
-          </button>
+          </NavLink>
         ))}
-        <button
-          className={view === "preferences" ? "active" : ""}
-          onClick={() => setView("preferences")}
-        >
+        <NavLink to="/preferences">
           <Settings size={17} aria-hidden="true" />
           Preferences
-        </button>
+        </NavLink>
       </nav>
-      {body}
+      <Outlet context={s} />
     </main>
   );
 }

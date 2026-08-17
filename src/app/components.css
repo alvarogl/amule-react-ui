@@ -52,6 +52,9 @@
   .app-brand {
     @apply min-w-0;
   }
+  .app-brand a {
+    @apply flex items-center gap-2.5 text-text no-underline;
+  }
   .app-logo {
     @apply size-[30px] shrink-0 object-contain;
   }
@@ -85,10 +88,10 @@
   .shell nav {
     @apply flex gap-[5px] border-b border-[#1c2b3b] px-[22px] py-3 max-[700px]:overflow-auto max-[700px]:p-2.5;
   }
-  .shell nav button {
-    @apply inline-flex items-center gap-[7px] whitespace-nowrap bg-transparent text-muted-strong;
+  .shell nav a {
+    @apply inline-flex cursor-pointer items-center gap-[7px] whitespace-nowrap rounded-[7px] border-0 bg-transparent px-[13px] py-[10px] font-bold text-muted-strong;
   }
-  .shell nav .active,
+  .shell nav a.active,
   .active-action {
     @apply bg-accent-soft text-accent-text;
   }
