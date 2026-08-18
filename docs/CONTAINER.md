@@ -72,9 +72,10 @@ docker compose --env-file docker.env up -d
 ```
 
 `latest` is a convenience alias and must not be used for an installation that
-needs reproducible upgrades or rollbacks. The current image is built from
-aMule release `3.0.1`; see [`docker/amule-version.env`](../docker/amule-version.env)
-for its immutable source commit.
+needs reproducible upgrades or rollbacks. The current image is built from a
+pinned aMule `master` snapshot; see
+[`docker/amule-version.env`](../docker/amule-version.env) for its immutable
+source commit.
 
 Build or select an explicit image tag, then retain the three volumes while
 recreating the service. Roll back by starting the prior image tag with the same

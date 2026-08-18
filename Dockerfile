@@ -8,7 +8,7 @@ COPY . .
 RUN pnpm build
 
 FROM ubuntu:24.04 AS amule-build
-ARG AMULE_COMMIT=02db0d7faecfc377694ff6242bc23346185990ed
+ARG AMULE_COMMIT=ca3988e5c3d24a27b2a98bf21f92e98eee2bf49d
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential ca-certificates cmake git libboost-dev libcrypto++-dev libcurl4-openssl-dev \
@@ -34,8 +34,8 @@ RUN cmake -S /src/amule -B /src/build -G Ninja \
     && cmake --install /src/build
 
 FROM ubuntu:24.04 AS runtime
-ARG AMULE_COMMIT=02db0d7faecfc377694ff6242bc23346185990ed
-ARG AMULE_VERSION=3.0.1
+ARG AMULE_COMMIT=ca3988e5c3d24a27b2a98bf21f92e98eee2bf49d
+ARG AMULE_VERSION=git-ca3988e5
 ARG VERSION=dev
 ARG SOURCE_REVISION=unknown
 LABEL org.opencontainers.image.title="aMule Console" \
