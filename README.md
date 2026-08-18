@@ -131,11 +131,43 @@ pnpm are needed only when building from a checkout.
 
 ### Publish a GitHub Release
 
-The `Release` workflow is manual-only. From `main`, use **Actions → Release →
-Run workflow**, enter the exact version in `package.json`, and wait for its
-quality, deployment, browser, and archive checks to pass. It then creates tag
-`v<version>` and attaches the archive plus checksum to a generated GitHub
-Release. It does not deploy to any aMule host.
+The `Release` workflow is manual-only. Stable releases run only from `main`.
+Select the semantic version component to increment; after the quality,
+deployment, browser, and archive checks pass, it commits the new version,
+creates tag `v<version>`, and attaches the archive plus checksum to a generated
+GitHub Release. It does not deploy to any aMule host.
+
+For an early release from another branch, select **Create a beta prerelease**.
+The workflow appends `-beta` to the calculated next version, pushes the release
+commit to that branch, and creates a GitHub prerelease. A beta does not alter
+`main` or become `latest`.
+
+### Docker Hub releases
+
+UI versions use independent semantic versioning. The bundled aMule source is
+recorded separately in [docker/amule-version.env](docker/amule-version.env).
+Each published image has an immutable combined tag such as
+`0.2.0-amule-3.0.1`; a development aMule commit is labelled honestly, for
+example `0.2.0-amule-git-d8d5720b`. `latest` is a moving alias for the newest
+stable image and is unsuitable for deployments.
+
+To enable publishing, create the Docker Hub repository and configure these
+GitHub Actions values:
+
+- Repository variable `DOCKERHUB_IMAGE` — image name without a registry, for
+  example `alvarogl91/amule-console`.
+- Repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` — a Docker Hub
+  username and access token with permission to push that repository.
+
+Selecting **Publish the multi-platform image to Docker Hub** runs the separate
+**Docker release** workflow after the GitHub Release. It publishes
+`linux/amd64` and `linux/arm64`, with provenance and an SBOM. The workflow
+derives the exact combined image tag automatically from the new UI version and
+the pinned aMule version; operators never enter an image tag manually.
+
+Before building, Docker release rejects an existing exact image tag. It also
+rejects a beta image if the corresponding final image tag already exists. Only
+stable images update `latest`; beta images use their exact `-beta` tag only.
 
 ## License
 

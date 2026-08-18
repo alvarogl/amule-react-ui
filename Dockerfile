@@ -8,7 +8,7 @@ COPY . .
 RUN pnpm build
 
 FROM ubuntu:24.04 AS amule-build
-ARG AMULE_COMMIT=d8d5720b0ee858b9cb02ba804cc183d2a57c424b
+ARG AMULE_COMMIT=ca3988e5c3d24a27b2a98bf21f92e98eee2bf49d
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential ca-certificates cmake git libboost-dev libcrypto++-dev libcurl4-openssl-dev \
@@ -34,13 +34,17 @@ RUN cmake -S /src/amule -B /src/build -G Ninja \
     && cmake --install /src/build
 
 FROM ubuntu:24.04 AS runtime
-ARG AMULE_COMMIT=d8d5720b0ee858b9cb02ba804cc183d2a57c424b
+ARG AMULE_COMMIT=ca3988e5c3d24a27b2a98bf21f92e98eee2bf49d
+ARG AMULE_VERSION=git-ca3988e5
 ARG VERSION=dev
+ARG SOURCE_REVISION=unknown
 LABEL org.opencontainers.image.title="aMule Console" \
       org.opencontainers.image.description="aMule daemon with the bundled React console" \
       org.opencontainers.image.source="https://github.com/alvarogl/amule-react-ui" \
-      org.opencontainers.image.revision="$AMULE_COMMIT" \
-      org.opencontainers.image.version="$VERSION"
+      org.opencontainers.image.revision="$SOURCE_REVISION" \
+      org.opencontainers.image.version="$VERSION" \
+      org.opencontainers.image.amule.version="$AMULE_VERSION" \
+      org.opencontainers.image.amule.revision="$AMULE_COMMIT"
 ENV DEBIAN_FRONTEND=noninteractive \
     AMULE_CONFIG_DIR=/config \
     AMULE_INCOMING_DIR=/incoming \

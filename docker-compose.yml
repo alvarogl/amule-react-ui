@@ -4,7 +4,7 @@ services:
       context: .
       args:
         VERSION: ${AMULE_IMAGE_VERSION:-dev}
-    image: amule-console:${AMULE_IMAGE_VERSION:-local}
+    image: ${AMULE_IMAGE:-amule-console}:${AMULE_IMAGE_VERSION:-local}
     environment:
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}

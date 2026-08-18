@@ -59,7 +59,23 @@ complete origin. Proxy `/`, `/api/v0/*`, and `/api/v0/events` together, retain
 HTTP/1.1 and streaming for SSE, and do not enable CORS merely for this UI.
 Reverse-proxy automation is deliberately outside this deployment.
 
-## Upgrade, rollback, and password rotation
+## Image versions, upgrade, rollback, and password rotation
+
+Published images are tagged with both the UI and bundled aMule version, for
+example `0.2.0-amule-3.0.1`. Use that exact tag for a deployment:
+
+```bash
+AMULE_IMAGE=alvarogl91/amule-console
+AMULE_IMAGE_VERSION=0.2.0-amule-3.0.1
+docker compose --env-file docker.env pull
+docker compose --env-file docker.env up -d
+```
+
+`latest` is a convenience alias and must not be used for an installation that
+needs reproducible upgrades or rollbacks. The current image is built from a
+pinned aMule `master` snapshot; see
+[`docker/amule-version.env`](../docker/amule-version.env) for its immutable
+source commit.
 
 Build or select an explicit image tag, then retain the three volumes while
 recreating the service. Roll back by starting the prior image tag with the same

@@ -1,0 +1,114 @@
+name: Docker release
+
+"on":
+  workflow_call:
+    inputs:
+      image:
+        description: Docker Hub image name without a registry
+        required: true
+        type: string
+      version:
+        description: UI release version
+        required: true
+        type: string
+      amule_version:
+        description: Bundled aMule version
+        required: true
+        type: string
+      amule_commit:
+        description: Bundled aMule source commit
+        required: true
+        type: string
+      source_revision:
+        description: Source commit for the release
+        required: true
+        type: string
+      beta:
+        description: Whether this is a beta prerelease
+        required: true
+        type: boolean
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-release-${{ inputs.image }}-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish multi-platform image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_revision }}
+
+      - uses: docker/setup-qemu-action@v4
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Sign in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Reject an existing release image tag
+        env:
+          IMAGE: ${{ inputs.image }}
+          VERSION: ${{ inputs.version }}
+          AMULE_VERSION: ${{ inputs.amule_version }}
+          BETA: ${{ inputs.beta }}
+        run: |
+          set -euo pipefail
+          image="docker.io/${IMAGE}"
+          exact_tag="${image}:${VERSION}-amule-${AMULE_VERSION}"
+          final_version="${VERSION%-beta}"
+          final_tag="${image}:${final_version}-amule-${AMULE_VERSION}"
+
+          if docker buildx imagetools inspect "$exact_tag" >/dev/null 2>&1; then
+            echo "Refusing to overwrite existing image tag: $exact_tag" >&2
+            exit 1
+          fi
+          if [[ "$BETA" == "true" ]] && docker buildx imagetools inspect "$final_tag" >/dev/null 2>&1; then
+            echo "Refusing beta publish because final image tag already exists: $final_tag" >&2
+            exit 1
+          fi
+
+      - name: Calculate image tags
+        id: image_tags
+        env:
+          IMAGE: ${{ inputs.image }}
+          VERSION: ${{ inputs.version }}
+          AMULE_VERSION: ${{ inputs.amule_version }}
+          BETA: ${{ inputs.beta }}
+        run: |
+          {
+            echo "tags<<EOF"
+            echo "docker.io/${IMAGE}:${VERSION}-amule-${AMULE_VERSION}"
+            [[ "$BETA" == "true" ]] || echo "docker.io/${IMAGE}:latest"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and publish multi-platform image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          provenance: mode=max
+          sbom: true
+          build-args: |
+            VERSION=${{ inputs.version }}
+            AMULE_VERSION=${{ inputs.amule_version }}
+            AMULE_COMMIT=${{ inputs.amule_commit }}
+            SOURCE_REVISION=${{ inputs.source_revision }}
+          tags: ${{ steps.image_tags.outputs.tags }}

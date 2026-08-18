@@ -12,6 +12,16 @@ name: Release
           - major
           - minor
           - patch
+      publish_docker:
+        description: Publish the multi-platform image to Docker Hub
+        required: true
+        default: false
+        type: boolean
+      beta:
+        description: Create a beta prerelease (allowed from a non-main branch)
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -23,7 +33,12 @@ concurrency:
 jobs:
   release:
     name: Build and publish release
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || inputs.beta
+    outputs:
+      release_version: ${{ steps.release_version.outputs.release_version }}
+      amule_version: ${{ steps.amule_version.outputs.amule_version }}
+      amule_commit: ${{ steps.amule_version.outputs.amule_commit }}
+      source_revision: ${{ steps.release_commit.outputs.commit_sha }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -55,6 +70,7 @@ jobs:
         id: release_version
         env:
           BUMP: ${{ inputs.bump }}
+          BETA: ${{ inputs.beta }}
         run: |
           release_version="$(node --input-type=module -e '
             import { readFileSync, writeFileSync } from "node:fs";
@@ -69,7 +85,8 @@ jobs:
             else if (process.env.BUMP === "patch") patch += 1;
             else throw new Error(`unsupported version bump: ${process.env.BUMP}`);
 
-            packageJson.version = `${major}.${minor}.${patch}`;
+            const prerelease = process.env.BETA === "true" ? "-beta" : "";
+            packageJson.version = `${major}.${minor}.${patch}${prerelease}`;
             writeFileSync("package.json", `${JSON.stringify(packageJson, null, 2)}\n`);
             process.stdout.write(packageJson.version);
           ')"
@@ -86,6 +103,16 @@ jobs:
             echo "Tag v${RELEASE_VERSION} already exists." >&2
             exit 1
           fi
+
+      - name: Read bundled aMule version
+        id: amule_version
+        run: |
+          set -euo pipefail
+          source docker/amule-version.env
+          [[ "$AMULE_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$AMULE_VERSION" =~ ^[0-9A-Za-z][0-9A-Za-z._-]*$ ]]
+          echo "amule_version=$AMULE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "amule_commit=$AMULE_COMMIT" >> "$GITHUB_OUTPUT"
 
       - name: Check formatting
         run: pnpm format:check
@@ -111,7 +138,7 @@ jobs:
       - name: Test release package
         run: pnpm test:release
 
-      - name: Commit release version to main
+      - name: Commit release version
         id: release_commit
         env:
           RELEASE_VERSION: ${{ steps.release_version.outputs.release_version }}
@@ -120,7 +147,7 @@ jobs:
           git config user.email "${{ steps.release_token.outputs.app-slug }}[bot]@users.noreply.github.com"
           git add package.json
           git commit -m "chore: release v${RELEASE_VERSION}"
-          git push origin HEAD:main
+          git push origin "HEAD:${GITHUB_REF#refs/heads/}"
           echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Create release assets
@@ -135,8 +162,25 @@ jobs:
           GH_TOKEN: ${{ steps.release_token.outputs.token }}
           RELEASE_VERSION: ${{ steps.release_version.outputs.release_version }}
           RELEASE_COMMIT: ${{ steps.release_commit.outputs.commit_sha }}
+          BETA: ${{ inputs.beta }}
         run: |
-          gh release create "v${RELEASE_VERSION}" release/*.tar.gz release/*.sha256 \
+          prerelease=()
+          [[ "$BETA" == "true" ]] && prerelease+=(--prerelease)
+          gh release create "v${RELEASE_VERSION}" release/*.tar.gz release/*.sha256 "${prerelease[@]}" \
             --target "$RELEASE_COMMIT" \
             --title "aMule React UI v${RELEASE_VERSION}" \
             --generate-notes
+
+  docker-release:
+    name: Run Docker release flow
+    needs: release
+    if: inputs.publish_docker && vars.DOCKERHUB_IMAGE != ''
+    uses: ./.github/workflows/docker-release.yml
+    with:
+      image: ${{ vars.DOCKERHUB_IMAGE }}
+      version: ${{ needs.release.outputs.release_version }}
+      amule_version: ${{ needs.release.outputs.amule_version }}
+      amule_commit: ${{ needs.release.outputs.amule_commit }}
+      source_revision: ${{ needs.release.outputs.source_revision }}
+      beta: ${{ inputs.beta }}
+    secrets: inherit

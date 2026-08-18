@@ -60,6 +60,14 @@ semantic version, and commits that version directly to `main` after validation
 before publishing verified assets; it must never add a deployment step or
 production credentials without explicit approval.
 
+UI versions use independent SemVer. Container releases pair the UI version
+with the separately pinned aMule version from `docker/amule-version.env`; use
+only exact combined image tags for deployment and rollback, never `latest`.
+Docker Hub publication is an explicit, default-off release-workflow option;
+when selected, its exact tags are derived automatically from those versions.
+Stable releases run only from `main`; beta prereleases may run from another
+branch, append `-beta` to the calculated version, and must not update `latest`.
+
 ## Agent Feedback & Continuous Improvement
 
 Treat the newest explicit user instruction as the source of truth. After implementing and verifying recurring feedback, update this file in the same change when it creates a durable rule—for example, an agreed UI behavior, validation command, API boundary, or review practice.
