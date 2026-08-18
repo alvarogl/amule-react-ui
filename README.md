@@ -131,11 +131,16 @@ pnpm are needed only when building from a checkout.
 
 ### Publish a GitHub Release
 
-The `Release` workflow is manual-only. From `main`, use **Actions → Release →
-Run workflow** and select the semantic version component to increment. After
-the quality, deployment, browser, and archive checks pass, it commits the new
-version, creates tag `v<version>`, and attaches the archive plus checksum to a
-generated GitHub Release. It does not deploy to any aMule host.
+The `Release` workflow is manual-only. Stable releases run only from `main`.
+Select the semantic version component to increment; after the quality,
+deployment, browser, and archive checks pass, it commits the new version,
+creates tag `v<version>`, and attaches the archive plus checksum to a generated
+GitHub Release. It does not deploy to any aMule host.
+
+For an early release from another branch, select **Create a beta prerelease**.
+The workflow appends `-beta` to the calculated next version, pushes the release
+commit to that branch, and creates a GitHub prerelease. A beta does not alter
+`main` or become `latest`.
 
 ### Docker Hub releases
 
@@ -150,16 +155,19 @@ To enable publishing, create the Docker Hub repository and configure these
 GitHub Actions values:
 
 - Repository variable `DOCKERHUB_IMAGE` — image name without a registry, for
-  example `alvarogl/amule-console`.
+  example `alvarogl91/amule-console`.
 - Repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` — a Docker Hub
   username and access token with permission to push that repository.
 
-The Docker Hub job publishes `linux/amd64` and `linux/arm64` after each GitHub
-Release only when **Publish the multi-platform image to Docker Hub** is selected
-when starting a release. It is skipped until `DOCKERHUB_IMAGE` is configured;
-the publish will then require both Docker Hub secrets. The workflow derives the
-exact combined image tag automatically from the new UI version and the pinned
-aMule version; operators never enter an image tag manually.
+Selecting **Publish the multi-platform image to Docker Hub** runs the separate
+**Docker release** workflow after the GitHub Release. It publishes
+`linux/amd64` and `linux/arm64`, with provenance and an SBOM. The workflow
+derives the exact combined image tag automatically from the new UI version and
+the pinned aMule version; operators never enter an image tag manually.
+
+Before building, Docker release rejects an existing exact image tag. It also
+rejects a beta image if the corresponding final image tag already exists. Only
+stable images update `latest`; beta images use their exact `-beta` tag only.
 
 ## License
 

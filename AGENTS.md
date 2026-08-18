@@ -65,6 +65,8 @@ with the separately pinned aMule version from `docker/amule-version.env`; use
 only exact combined image tags for deployment and rollback, never `latest`.
 Docker Hub publication is an explicit, default-off release-workflow option;
 when selected, its exact tags are derived automatically from those versions.
+Stable releases run only from `main`; beta prereleases may run from another
+branch, append `-beta` to the calculated version, and must not update `latest`.
 
 ## Agent Feedback & Continuous Improvement
 

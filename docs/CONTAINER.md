@@ -65,7 +65,7 @@ Published images are tagged with both the UI and bundled aMule version, for
 example `0.2.0-amule-3.0.1`. Use that exact tag for a deployment:
 
 ```bash
-AMULE_IMAGE=alvarogl/amule-console
+AMULE_IMAGE=alvarogl91/amule-console
 AMULE_IMAGE_VERSION=0.2.0-amule-3.0.1
 docker compose --env-file docker.env pull
 docker compose --env-file docker.env up -d

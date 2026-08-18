@@ -17,6 +17,11 @@ name: Release
         required: true
         default: false
         type: boolean
+      beta:
+        description: Create a beta prerelease (allowed from a non-main branch)
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -28,7 +33,7 @@ concurrency:
 jobs:
   release:
     name: Build and publish release
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || inputs.beta
     outputs:
       release_version: ${{ steps.release_version.outputs.release_version }}
       amule_version: ${{ steps.amule_version.outputs.amule_version }}
@@ -65,6 +70,7 @@ jobs:
         id: release_version
         env:
           BUMP: ${{ inputs.bump }}
+          BETA: ${{ inputs.beta }}
         run: |
           release_version="$(node --input-type=module -e '
             import { readFileSync, writeFileSync } from "node:fs";
@@ -79,7 +85,8 @@ jobs:
             else if (process.env.BUMP === "patch") patch += 1;
             else throw new Error(`unsupported version bump: ${process.env.BUMP}`);
 
-            packageJson.version = `${major}.${minor}.${patch}`;
+            const prerelease = process.env.BETA === "true" ? "-beta" : "";
+            packageJson.version = `${major}.${minor}.${patch}${prerelease}`;
             writeFileSync("package.json", `${JSON.stringify(packageJson, null, 2)}\n`);
             process.stdout.write(packageJson.version);
           ')"
@@ -131,7 +138,7 @@ jobs:
       - name: Test release package
         run: pnpm test:release
 
-      - name: Commit release version to main
+      - name: Commit release version
         id: release_commit
         env:
           RELEASE_VERSION: ${{ steps.release_version.outputs.release_version }}
@@ -140,7 +147,7 @@ jobs:
           git config user.email "${{ steps.release_token.outputs.app-slug }}[bot]@users.noreply.github.com"
           git add package.json
           git commit -m "chore: release v${RELEASE_VERSION}"
-          git push origin HEAD:main
+          git push origin "HEAD:${GITHUB_REF#refs/heads/}"
           echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Create release assets
@@ -155,47 +162,25 @@ jobs:
           GH_TOKEN: ${{ steps.release_token.outputs.token }}
           RELEASE_VERSION: ${{ steps.release_version.outputs.release_version }}
           RELEASE_COMMIT: ${{ steps.release_commit.outputs.commit_sha }}
+          BETA: ${{ inputs.beta }}
         run: |
-          gh release create "v${RELEASE_VERSION}" release/*.tar.gz release/*.sha256 \
+          prerelease=()
+          [[ "$BETA" == "true" ]] && prerelease+=(--prerelease)
+          gh release create "v${RELEASE_VERSION}" release/*.tar.gz release/*.sha256 "${prerelease[@]}" \
             --target "$RELEASE_COMMIT" \
             --title "aMule React UI v${RELEASE_VERSION}" \
             --generate-notes
 
-  docker-hub:
-    name: Publish Docker Hub image
+  docker-release:
+    name: Run Docker release flow
     needs: release
     if: inputs.publish_docker && vars.DOCKERHUB_IMAGE != ''
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.release.outputs.source_revision }}
-
-      - uses: docker/setup-qemu-action@v4
-
-      - uses: docker/setup-buildx-action@v4
-
-      - name: Sign in to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and publish multi-platform image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          push: true
-          platforms: linux/amd64,linux/arm64
-          build-args: |
-            VERSION=${{ needs.release.outputs.release_version }}
-            AMULE_VERSION=${{ needs.release.outputs.amule_version }}
-            AMULE_COMMIT=${{ needs.release.outputs.amule_commit }}
-            SOURCE_REVISION=${{ needs.release.outputs.source_revision }}
-          tags: |
-            docker.io/${{ vars.DOCKERHUB_IMAGE }}:${{ needs.release.outputs.release_version }}-amule-${{ needs.release.outputs.amule_version }}
-            docker.io/${{ vars.DOCKERHUB_IMAGE }}:latest
+    uses: ./.github/workflows/docker-release.yml
+    with:
+      image: ${{ vars.DOCKERHUB_IMAGE }}
+      version: ${{ needs.release.outputs.release_version }}
+      amule_version: ${{ needs.release.outputs.amule_version }}
+      amule_commit: ${{ needs.release.outputs.amule_commit }}
+      source_revision: ${{ needs.release.outputs.source_revision }}
+      beta: ${{ inputs.beta }}
+    secrets: inherit
