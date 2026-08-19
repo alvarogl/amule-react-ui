@@ -54,11 +54,19 @@ const StatisticsView = lazy(() =>
 type UploadPeer = Awaited<ReturnType<typeof api.uploadClients>>["clients"][number];
 type Status = Awaited<ReturnType<typeof api.status>>;
 
-function MobileTransferActions({ label, children }: { label: string; children: ReactNode }) {
+function MobileTransferActions({
+  label,
+  children,
+}: {
+  label: string;
+  children: (closeMenu: () => void) => ReactNode;
+}) {
   const [open, setOpen] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const closeMenu = () => setOpen(false);
 
   const updatePosition = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
@@ -102,19 +110,21 @@ function MobileTransferActions({ label, children }: { label: string; children: R
         title="Actions"
         onClick={() => {
           updatePosition();
+          setHasOpened(true);
           setOpen((current) => !current);
         }}
       >
         <MoreHorizontal size={16} />
       </button>
-      {open &&
+      {hasOpened &&
         createPortal(
           <div
             ref={menuRef}
             className="transfer-actions__popover"
             style={{ top: position.top, left: position.left }}
+            hidden={!open}
           >
-            {children}
+            {children(closeMenu)}
           </div>,
           document.body,
         )}
@@ -256,7 +266,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       return toast.warning("Enter one or more valid ed2k:// links.");
     add.mutate(links);
   }
-  function transferActions(download: Download) {
+  function transferActions(download: Download, closeMenu?: () => void) {
     if (download.status === "completed") {
       return (
         <button
@@ -264,7 +274,10 @@ function Transfers({ downloads }: { downloads: Download[] }) {
           disabled={clearOne.isPending}
           aria-label={`Clear completed notification for ${download.name}`}
           title="Clear completed notification (keeps Incoming file)"
-          onClick={() => clearOne.mutate(download.hash)}
+          onClick={() => {
+            closeMenu?.();
+            clearOne.mutate(download.hash);
+          }}
         >
           <Check size={15} />
         </button>
@@ -277,7 +290,10 @@ function Transfers({ downloads }: { downloads: Download[] }) {
           className="icon"
           aria-label={`${nextAction === "resume" ? "Resume" : "Pause"} ${download.name}`}
           title={nextAction === "resume" ? "Resume download" : "Pause download"}
-          onClick={() => one.mutate({ hash: download.hash, status: nextAction })}
+          onClick={() => {
+            closeMenu?.();
+            one.mutate({ hash: download.hash, status: nextAction });
+          }}
         >
           {nextAction === "resume" ? <Play size={15} /> : <Pause size={15} />}
         </button>
@@ -288,6 +304,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
               disabled={remove.isPending}
               aria-label={`Delete ${download.name}`}
               title="Delete download"
+              onClick={closeMenu}
             >
               <Trash2 size={15} />
             </button>
@@ -492,7 +509,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
                   <td className="actions-column actions-column--fixed">
                     <div className="transfer-actions__inline">{transferActions(d)}</div>
                     <MobileTransferActions label={`Actions for ${d.name}`}>
-                      {transferActions(d)}
+                      {(closeMenu) => transferActions(d, closeMenu)}
                     </MobileTransferActions>
                   </td>
                 </tr>
