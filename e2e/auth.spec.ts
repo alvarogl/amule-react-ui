@@ -206,8 +206,11 @@ test("covers core session and mutation workflows", async ({ page }) => {
   await expect(page.evaluate(() => localStorage.length)).resolves.toBe(0);
   await expect(page.evaluate(() => sessionStorage.length)).resolves.toBe(0);
 
+  await page.setViewportSize({ width: 500, height: 900 });
+  await page.getByRole("button", { name: "Actions for example.iso" }).click();
   await page.getByRole("button", { name: "Delete example.iso" }).click();
   await expect(page.getByRole("heading", { name: "Delete download?" })).toBeVisible();
+  await expect(page.locator(".transfer-actions__popover")).toBeHidden();
   await page.getByRole("button", { name: "Delete download", exact: true }).click();
   await expect.poll(() => deletedHash).toBe(download.hash);
   await expect.poll(async () => page.locator(".transfer-table tbody tr").count()).toBe(0);
