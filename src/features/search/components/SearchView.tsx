@@ -10,15 +10,7 @@ import { getErrorMessage } from "@/shared/lib/errors";
 import { SearchResultNotesDialog } from "./SearchResultNotesDialog";
 import { QueryNotice } from "@/shared/components/QueryNotice";
 
-const fileTypes = [
-  "audio",
-  "video",
-  "archive",
-  "disc_image",
-  "picture",
-  "text",
-  "program",
-];
+const fileTypes = ["audio", "video", "archive", "disc_image", "picture", "text", "program"];
 
 export function SearchView() {
   const [query, setQuery] = useState("");

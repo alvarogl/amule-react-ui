@@ -206,14 +206,22 @@ export const kadSchema = z.object({
   firewalled_udp: z.boolean().nullable(),
   lan_mode: z.boolean().nullable(),
   public_ip: z.string().nullable(),
-  network: z.object({ user_count: z.number().nullable(), file_count: z.number().nullable(), node_count: z.number().nullable() }),
+  network: z.object({
+    user_count: z.number().nullable(),
+    file_count: z.number().nullable(),
+    node_count: z.number().nullable(),
+  }),
   indexed: z.object({
     sources: z.number().nullable(),
     keywords: z.number().nullable(),
     notes: z.number().nullable(),
     load_percent: z.number().nullable(),
   }),
-  buddy: z.object({ state: z.string().nullable(), ip: z.string().nullable(), port: z.number().nullable() }),
+  buddy: z.object({
+    state: z.string().nullable(),
+    ip: z.string().nullable(),
+    port: z.number().nullable(),
+  }),
 });
 export const amuleLogSchema = z.object({
   lines: z.array(z.string()),

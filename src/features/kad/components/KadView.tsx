@@ -12,7 +12,7 @@ function KadMetric({ label, value }: { label: string; value: number | string | n
   return (
     <section className="metric">
       <span>{label}</span>
-      <strong>{typeof value === "number" ? value.toLocaleString() : value ?? "—"}</strong>
+      <strong>{typeof value === "number" ? value.toLocaleString() : (value ?? "—")}</strong>
     </section>
   );
 }

@@ -197,7 +197,12 @@ describe("aMule schemas", () => {
         unit: "bytes_per_second",
         interval_seconds: 1,
         points: [{ at: 1, value: 42 }],
-        session: { downloaded_bytes: 1, uploaded_bytes: 2, kad_node_seconds: 3, duration_seconds: 4 },
+        session: {
+          downloaded_bytes: 1,
+          uploaded_bytes: 2,
+          kad_node_seconds: 3,
+          duration_seconds: 4,
+        },
       }).points[0].value,
     ).toBe(42);
   });
