@@ -4,7 +4,7 @@
     @apply flex gap-[9px] border-b border-border px-[18px] py-[14px] max-[700px]:flex-wrap;
   }
   .upload-filter {
-    @apply px-[18px];
+    @apply px-[18px] py-[14px];
   }
   .transfer-tools input:first-child {
     @apply flex-1;

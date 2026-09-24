@@ -7,6 +7,7 @@ import {
   downloadsSchema,
   kadSchema,
   searchResultsSchema,
+  serversSchema,
   sharedDirectoriesSchema,
   sharedFilesSchema,
   statusSchema,
@@ -51,7 +52,7 @@ describe("aMule schemas", () => {
   it("accepts daemon update availability", () =>
     expect(
       versionSchema.parse({
-        name: "amuleapi",
+        service: "amuleapi",
         api_version: "v1",
         amuleapi_version: "3.1.0",
         daemon_version: "3.0.1",
@@ -59,10 +60,10 @@ describe("aMule schemas", () => {
           check_enabled: true,
           checked: true,
           latest_version: "3.0.2",
-          update_available: true,
-          last_checked: 1,
+          available: true,
+          last_checked_at: 1,
         },
-      }).update.update_available,
+      }).update?.available,
     ).toBe(true));
   it("rejects a malformed download response", () =>
     expect(() => downloadsSchema.parse({ downloads: [{ hash: 1 }] })).toThrow());
@@ -122,18 +123,19 @@ describe("aMule schemas", () => {
     expect(
       kadSchema.parse({
         state: "connected",
-        firewalled: false,
+        firewalled_tcp: false,
         firewalled_udp: false,
-        in_lan_mode: false,
-        ip: "203.0.113.5",
-        network: { users: 1, files: 2, nodes: 3 },
-        indexed: { sources: 4, keywords: 5, notes: 6, load: 7 },
-      }).network.nodes,
+        lan_mode: false,
+        public_ip: "203.0.113.5",
+        network: { user_count: 1, file_count: 2, node_count: 3 },
+        indexed: { sources: 4, keywords: 5, notes: 6, load_percent: 7 },
+        buddy: { state: "connected", ip: "203.0.113.6", port: 4672 },
+      }).network.node_count,
     ).toBe(3));
   it("accepts the structured aMule log buffer", () =>
-    expect(amuleLogSchema.parse({ lines: ["one"], total_cached: 2, returned: 1 }).lines).toEqual([
-      "one",
-    ]));
+    expect(
+      amuleLogSchema.parse({ lines: ["one"], total_lines: 2, returned_lines: 1 }).lines,
+    ).toEqual(["one"]));
   it("accepts a peer list entry with live transfer fields", () =>
     expect(
       clientsSchema.parse({
@@ -154,6 +156,22 @@ describe("aMule schemas", () => {
         ],
       }).clients[0].ecid,
     ).toBe(42));
+  it("accepts server counts using the native API field names", () =>
+    expect(
+      serversSchema.parse({
+        servers: [
+          {
+            ecid: 1,
+            name: "Example",
+            address: "203.0.113.1:4661",
+            user_count: 10,
+            file_count: 20,
+            priority: "normal",
+            permanent: false,
+          },
+        ],
+      }).servers[0].user_count,
+    ).toBe(10));
   it("accepts typed statistics tree values and graph samples", () => {
     expect(
       statisticsTreeSchema.parse({
@@ -175,14 +193,26 @@ describe("aMule schemas", () => {
     ).toHaveLength(1);
     expect(
       statisticsGraphSchema.parse({
-        graph: "download",
-        unit: "bps",
+        graph: "download_speed",
+        unit: "bytes_per_second",
         interval_seconds: 1,
-        points: [{ t: "2026-01-01T00:00:00Z", t_unix: 1, value: 42 }],
-        session: { download_bytes: 1, upload_bytes: 2, kad_bytes: 3 },
+        points: [{ at: 1, value: 42 }],
+        session: { downloaded_bytes: 1, uploaded_bytes: 2, kad_node_seconds: 3, duration_seconds: 4 },
       }).points[0].value,
     ).toBe(42);
   });
+  it("accepts null statistic extras emitted by the API", () =>
+    expect(
+      statisticsTreeSchema.parse({
+        nodes: [
+          {
+            label: "Uptime: %s",
+            values: [{ type: "time", value: 1, extra: null }],
+            children: [],
+          },
+        ],
+      }).nodes[0].values[0].extra,
+    ).toBeNull());
 });
 
 describe("api authentication", () => {
@@ -218,12 +248,15 @@ describe("transfer detail mutations", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ a4af_auto: true, sources: [12, 34] }), {
+        new Response(JSON.stringify({ a4af_auto: true, source_ecids: [12, 34] }), {
           headers: { "Content-Type": "application/json" },
         }),
       ),
     );
 
-    await expect(api.downloadA4af("hash")).resolves.toEqual({ a4af_auto: true, sources: [12, 34] });
+    await expect(api.downloadA4af("hash")).resolves.toEqual({
+      a4af_auto: true,
+      source_ecids: [12, 34],
+    });
   });
 });

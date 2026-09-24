@@ -8,11 +8,11 @@ import { ConfirmDialog } from "@/shared/components/ConfirmDialog";
 import { QueryNotice } from "@/shared/components/QueryNotice";
 import { getErrorMessage } from "@/shared/lib/errors";
 
-function KadMetric({ label, value }: { label: string; value: number | string }) {
+function KadMetric({ label, value }: { label: string; value: number | string | null }) {
   return (
     <section className="metric">
       <span>{label}</span>
-      <strong>{typeof value === "number" ? value.toLocaleString() : value}</strong>
+      <strong>{typeof value === "number" ? value.toLocaleString() : value ?? "—"}</strong>
     </section>
   );
 }
@@ -68,10 +68,10 @@ export function KadView() {
           <div className="kad-status">
             <Network size={18} />
             <strong>{state}</strong>
-            <span className={kad.data.firewalled ? "kad-warning" : "live"}>
-              {kad.data.firewalled ? "Firewalled" : "Reachable"}
+            <span className={kad.data.firewalled_tcp ? "kad-warning" : "live"}>
+              {kad.data.firewalled_tcp ? "Firewalled" : "Reachable"}
             </span>
-            <span>{kad.data.ip || "External IP unknown"}</span>
+            <span>{kad.data.public_ip || "External IP unknown"}</span>
             <button
               className="muted"
               disabled={network.isPending || state === "connected"}
@@ -88,26 +88,26 @@ export function KadView() {
             </button>
           </div>
           <div className="metrics kad-metrics">
-            <KadMetric label="Nodes" value={kad.data.network.nodes} />
-            <KadMetric label="Users" value={kad.data.network.users} />
-            <KadMetric label="Files" value={kad.data.network.files} />
+            <KadMetric label="Nodes" value={kad.data.network.node_count} />
+            <KadMetric label="Users" value={kad.data.network.user_count} />
+            <KadMetric label="Files" value={kad.data.network.file_count} />
             <KadMetric label="Indexed sources" value={kad.data.indexed.sources} />
           </div>
           <section className="panel kad-panel">
             <div className="panel-title">
               <h2>Kad store</h2>
-              <span>Load {kad.data.indexed.load}%</span>
+              <span>Load {kad.data.indexed.load_percent ?? 0}%</span>
             </div>
             <div className="kad-store">
-              <span>Keywords: {kad.data.indexed.keywords.toLocaleString()}</span>
-              <span>Notes: {kad.data.indexed.notes.toLocaleString()}</span>
+              <span>Keywords: {kad.data.indexed.keywords?.toLocaleString() ?? "—"}</span>
+              <span>Notes: {kad.data.indexed.notes?.toLocaleString() ?? "—"}</span>
               <span>
                 UDP: {kad.data.firewalled_udp ? "firewalled" : "reachable"} · LAN mode:{" "}
-                {kad.data.in_lan_mode ? "on" : "off"}
+                {kad.data.lan_mode ? "on" : "off"}
               </span>
               {kad.data.buddy && (
                 <span>
-                  Buddy: {kad.data.buddy.status} ({kad.data.buddy.ip}:{kad.data.buddy.port})
+                  Buddy: {kad.data.buddy.state} ({kad.data.buddy.ip}:{kad.data.buddy.port})
                 </span>
               )}
             </div>

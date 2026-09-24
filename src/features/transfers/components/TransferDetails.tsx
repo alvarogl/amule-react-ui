@@ -109,14 +109,14 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
               <h3>Alternate filenames</h3>
               <ul>
                 {names.data?.filenames.map((item) => (
-                  <li key={item.name}>
+                  <li key={item.filename}>
                     <span>
-                      {item.name} <small>({item.count})</small>
+                      {item.filename} <small>({item.source_count})</small>
                     </span>
                     <button
                       className="muted detail-action"
-                      disabled={rename.isPending || item.name === data.name}
-                      onClick={() => rename.mutate(item.name)}
+                      disabled={rename.isPending || item.filename === data.name}
+                      onClick={() => rename.mutate(item.filename)}
                     >
                       Use name
                     </button>
@@ -139,8 +139,8 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
               </ul>
               <h3>A4AF sources</h3>
               <p className="detail-a4af-status">
-                {a4af.data?.sources.length
-                  ? `${a4af.data.sources.length} source${a4af.data.sources.length === 1 ? "" : "s"}`
+                {a4af.data?.source_ecids.length
+                  ? `${a4af.data.source_ecids.length} source${a4af.data.source_ecids.length === 1 ? "" : "s"}`
                   : "No sources"}
                 <span>Auto {a4af.data?.a4af_auto ? "on" : "off"}</span>
               </p>
@@ -167,9 +167,9 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
                   Toggle automatic
                 </button>
               </div>
-              {a4af.data?.sources.length ? (
+              {a4af.data?.source_ecids.length ? (
                 <div className="detail-source-list">
-                  {a4af.data.sources.map((source) => (
+                  {a4af.data.source_ecids.map((source) => (
                     <span key={source}>#{source}</span>
                   ))}
                 </div>

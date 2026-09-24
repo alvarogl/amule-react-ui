@@ -295,21 +295,21 @@ export function StatisticsView() {
     if (graph === "traffic") {
       const points = new Map<number, Record<string, number>>();
       for (const point of download.data?.points ?? [])
-        points.set(point.t_unix, {
-          ...(points.get(point.t_unix) ?? {}),
-          time: point.t_unix,
+        points.set(point.at, {
+          ...(points.get(point.at) ?? {}),
+          time: point.at,
           download: point.value,
         });
       for (const point of upload.data?.points ?? [])
-        points.set(point.t_unix, {
-          ...(points.get(point.t_unix) ?? {}),
-          time: point.t_unix,
+        points.set(point.at, {
+          ...(points.get(point.at) ?? {}),
+          time: point.at,
           upload: point.value,
         });
       return [...points.values()].sort((left, right) => left.time - right.time);
     }
     return (secondary.data?.points ?? []).map((point) => ({
-      time: point.t_unix,
+      time: point.at,
       [graph]: point.value,
     }));
   }, [download.data, graph, secondary.data, upload.data]);
@@ -368,9 +368,9 @@ export function StatisticsView() {
           <>
             <ActivityChart data={chart} graph={graph} />
             <div className="statistics-session">
-              <span>Session download {formatBytes(session?.download_bytes)}</span>
-              <span>Session upload {formatBytes(session?.upload_bytes)}</span>
-              <span>Session Kad {formatBytes(session?.kad_bytes)}</span>
+              <span>Session download {formatBytes(session?.downloaded_bytes)}</span>
+              <span>Session upload {formatBytes(session?.uploaded_bytes)}</span>
+              <span>Kad node time {formatDuration(session?.kad_node_seconds)}</span>
             </div>
           </>
         )}

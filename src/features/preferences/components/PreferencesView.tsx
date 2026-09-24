@@ -25,7 +25,7 @@ function VersionChecker() {
     refetchInterval: waitingForResult ? 3_000 : false,
   });
   useEffect(() => {
-    const lastChecked = version.data?.update.last_checked;
+    const lastChecked = version.data?.update?.last_checked_at;
     if (
       waitingForResult &&
       lastChecked !== null &&
@@ -35,11 +35,11 @@ function VersionChecker() {
       setWaitingForResult(false);
       toast.success("Version check completed.");
     }
-  }, [version.data?.update.last_checked, waitingForResult]);
+  }, [version.data?.update?.last_checked_at, waitingForResult]);
   const check = useMutation({
     mutationFn: api.checkVersion,
     onSuccess: () => {
-      lastCheckedBeforeRequest.current = version.data?.update.last_checked ?? null;
+      lastCheckedBeforeRequest.current = version.data?.update?.last_checked_at ?? null;
       setWaitingForResult(true);
       void client.invalidateQueries({ queryKey: queryKeys.version });
     },
@@ -48,16 +48,16 @@ function VersionChecker() {
       toast.error(getErrorMessage(error));
     },
   });
-  if (!version.data?.update.check_enabled) return null;
+  if (!version.data?.update?.check_enabled) return null;
   const update = version.data.update;
-  const state = update.update_available
+  const state = update.available
     ? `Version ${update.latest_version} is available`
     : update.checked
       ? "aMule is up to date"
       : "No version check has completed yet";
   return (
     <section
-      className={`panel version-checker ${update.update_available ? "version-checker--available" : ""}`}
+      className={`panel version-checker ${update.available ? "version-checker--available" : ""}`}
     >
       <div>
         <strong>Software updates</strong>

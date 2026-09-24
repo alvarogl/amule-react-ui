@@ -44,7 +44,7 @@ export function LogsView() {
   const lines = (kind === "amule" ? amule.data?.lines : serverInfo.data?.text.split("\n"))
     ?.filter(Boolean)
     .slice(-maxTail);
-  const count = kind === "amule" ? amule.data?.total_cached : serverInfo.data?.returned_bytes;
+  const count = kind === "amule" ? amule.data?.total_lines : serverInfo.data?.returned_bytes;
   useEffect(() => {
     if (!liveTail || kind !== "amule") return;
     output.current?.scrollTo({ top: output.current.scrollHeight, behavior: "smooth" });

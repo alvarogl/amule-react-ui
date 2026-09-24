@@ -16,9 +16,9 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
   const [address, setAddress] = useState("");
   const [name, setName] = useState("");
   const [serversUrl, setServersUrl] = useState("");
-  const { sort, direction, toggleSort } = useSortState<"name" | "address" | "users" | "priority">(
-    "name",
-  );
+  const { sort, direction, toggleSort } = useSortState<
+    "name" | "address" | "user_count" | "priority"
+  >("name");
   const client = useQueryClient();
   const servers = useQuery({
     queryKey: queryKeys.servers,
@@ -104,8 +104,8 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
   const serverRows = [...(servers.data?.servers ?? [])].sort((left, right) => {
     const priority = { low: 1, normal: 2, high: 3 } as Record<string, number>;
     const value = (server: ServerRow) =>
-      sort === "users"
-        ? server.users
+      sort === "user_count"
+        ? server.user_count
         : sort === "priority"
           ? (priority[server.priority] ?? 0)
           : server[sort];
@@ -129,12 +129,6 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
           onClick={() => network.mutate({ action: "disconnect", target: "both" })}
         >
           Disconnect all
-        </button>
-        <button
-          className="muted"
-          onClick={() => network.mutate({ action: "connect", target: "kad" })}
-        >
-          Start Kad
         </button>
       </div>
       <form className="server-form" onSubmit={submit}>
@@ -194,7 +188,7 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
                     onSort={toggleSort}
                   />
                   <SortableHeader
-                    column="users"
+                    column="user_count"
                     label="Users"
                     sort={sort}
                     direction={direction}
@@ -222,7 +216,7 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
                         {connected && <span className="connected-mark">Connected</span>}
                       </td>
                       <td>{server.address}</td>
-                      <td>{server.users.toLocaleString()}</td>
+                      <td>{server.user_count.toLocaleString()}</td>
                       <td>
                         <select
                           className="server-select"
