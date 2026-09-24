@@ -10,16 +10,7 @@ import { getErrorMessage } from "@/shared/lib/errors";
 import { SearchResultNotesDialog } from "./SearchResultNotesDialog";
 import { QueryNotice } from "@/shared/components/QueryNotice";
 
-const fileTypes = [
-  "any",
-  "audio",
-  "videos",
-  "archives",
-  "cd-images",
-  "pictures",
-  "texts",
-  "programs",
-];
+const fileTypes = ["audio", "video", "archive", "disc_image", "picture", "text", "program"];
 
 export function SearchView() {
   const [query, setQuery] = useState("");
@@ -82,7 +73,7 @@ export function SearchView() {
     onError: (error) => toast.error(getErrorMessage(error)),
   });
   const close = useMutation({
-    mutationFn: (searchId: number) => api.stopSearch(searchId),
+    mutationFn: (searchId: number) => api.closeSearch(searchId),
     onMutate: (searchId) => {
       setDeletingSearches((current) => new Set(current).add(searchId));
     },
@@ -116,9 +107,9 @@ export function SearchView() {
     return {
       ...(fileType ? { file_type: fileType } : {}),
       ...(extension.trim() ? { extension: extension.trim().replace(/^\./, "") } : {}),
-      ...(minimum !== undefined ? { min_size: minimum } : {}),
-      ...(maximum !== undefined ? { max_size: maximum } : {}),
-      ...(minAvail.trim() ? { min_avail: Number(minAvail) } : {}),
+      ...(minimum !== undefined ? { min_size_bytes: minimum } : {}),
+      ...(maximum !== undefined ? { max_size_bytes: maximum } : {}),
+      ...(minAvail.trim() ? { min_source_count: Number(minAvail) } : {}),
     };
   }
   function submit(event: FormEvent) {

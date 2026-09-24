@@ -35,6 +35,7 @@ const server = setupServer(
     }),
   ),
   http.get("*/api/v1/downloads", () => HttpResponse.json({ downloads: [] })),
+  http.get("*/api/v1/clients", () => HttpResponse.json({ clients: [] })),
 );
 
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
@@ -48,6 +49,76 @@ describe("aMule REST client integration", () => {
       speeds: { download_speed_bytes_per_second: 10, upload_speed_bytes_per_second: 20 },
     });
     await expect(api.downloads()).resolves.toEqual({ downloads: [] });
+  });
+
+  it("uses the API's singular uploading activity filter", async () => {
+    let activity: string | null = null;
+    server.use(
+      http.get("*/api/v1/clients", ({ request }) => {
+        activity = new URL(request.url).searchParams.get("activity");
+        return HttpResponse.json({ clients: [] });
+      }),
+    );
+
+    await expect(api.uploadClients()).resolves.toEqual({ clients: [] });
+    expect(activity).toBe("uploading");
+  });
+
+  it("maps frontend statistic graph names to the native API contract", async () => {
+    server.use(
+      http.get("*/api/v1/stats/graphs/download_speed", () =>
+        HttpResponse.json({
+          graph: "download_speed",
+          unit: "bytes_per_second",
+          interval_seconds: 1,
+          points: [{ at: 1, value: 42 }],
+          session: {
+            downloaded_bytes: 1,
+            uploaded_bytes: 2,
+            kad_node_seconds: 3,
+            duration_seconds: 4,
+          },
+        }),
+      ),
+    );
+
+    await expect(api.statisticsGraph("download", 60)).resolves.toMatchObject({
+      graph: "download_speed",
+      points: [{ at: 1, value: 42 }],
+    });
+  });
+
+  it("sends the native search filter keys and file-type token", async () => {
+    let body: unknown;
+    server.use(
+      http.post("*/api/v1/search", async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({
+          search_id: 1,
+          query: "rammstein",
+          type: "global",
+          state: "running",
+          client_ecid: null,
+        });
+      }),
+    );
+
+    await expect(
+      api.startSearch("rammstein", "global", {
+        file_type: "video",
+        min_size_bytes: 1_048_576,
+        max_size_bytes: 2_097_152,
+        min_source_count: 2,
+      }),
+    ).resolves.toMatchObject({ search_id: 1 });
+    expect(body).toEqual({
+      query: "rammstein",
+      type: "global",
+      file_type: "video",
+      min_size_bytes: 1_048_576,
+      max_size_bytes: 2_097_152,
+      min_source_count: 2,
+    });
   });
 
   it("surfaces throttled update checks and rejected destructive operations", async () => {

@@ -143,10 +143,10 @@ function PeerDetails({ peer }: { peer: Client }) {
                 <dt>Client</dt>
                 <dd>
                   {data.software} {data.software_version}
-                  {data.mod_version ? ` (${data.mod_version})` : ""}
+                  {data.client_mod_name ? ` (${data.client_mod_name})` : ""}
                 </dd>
                 <dt>OS</dt>
-                <dd>{data.os_info || "Unknown"}</dd>
+                <dd>{data.reported_os || "Unknown"}</dd>
                 <dt>Identification</dt>
                 <dd>
                   {data.ident_state ?? "Unknown"} · {data.high_id ? "HighID" : "LowID / unknown"}
@@ -174,7 +174,7 @@ function PeerDetails({ peer }: { peer: Client }) {
                 </dd>
                 <dt>File progress</dt>
                 <dd>
-                  {data.part_progress_percent === undefined
+                  {data.part_progress_percent == null
                     ? "—"
                     : `${data.part_progress_percent.toFixed(1)}%`}
                 </dd>

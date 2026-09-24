@@ -19,7 +19,7 @@ test("covers core session and mutation workflows", async ({ page }) => {
   let downloads = [download];
   let deletedHash: string | undefined;
   let searches: Array<{ search_id: number; query: string; type: "global"; state: string }> = [];
-  let stoppedSearch: unknown;
+  let closedSearch: unknown;
   let addedServer: unknown;
   let createdCategory: unknown;
   let kadDisconnect: unknown;
@@ -139,8 +139,8 @@ test("covers core session and mutation workflows", async ({ page }) => {
           : [],
         progress: { state: "finished", type: "global", percent: 100 },
       });
-    } else if (/\/search\/\d+\/stop$/.test(url.pathname) && request.method() === "POST") {
-      stoppedSearch = url.pathname;
+    } else if (/\/search\/\d+$/.test(url.pathname) && request.method() === "DELETE") {
+      closedSearch = url.pathname;
       searches = [];
       await json({ ok: true });
     } else if (url.pathname.endsWith("/servers") && request.method() === "POST") {
@@ -158,12 +158,15 @@ test("covers core session and mutation workflows", async ({ page }) => {
     } else if (url.pathname.endsWith("/kad")) {
       await json({
         state: "connected",
-        firewalled: false,
+        node_id: "0123456789abcdef0123456789abcdef",
+        firewalled_tcp: false,
         firewalled_udp: false,
-        in_lan_mode: false,
-        ip: "192.0.2.1",
-        network: { users: 1, files: 2, nodes: 3 },
-        indexed: { sources: 4, keywords: 5, notes: 6, load: 7 },
+        lan_mode: false,
+        connected_since_at: 1,
+        public_ip: "192.0.2.1",
+        network: { user_count: 1, file_count: 2, node_count: 3 },
+        indexed: { sources: 4, keywords: 5, notes: 6, load_percent: 7 },
+        buddy: { state: null, ip: null, port: null },
       });
     } else if (url.pathname.endsWith("/networks/disconnect")) {
       kadDisconnect = request.postDataJSON();
@@ -172,7 +175,7 @@ test("covers core session and mutation workflows", async ({ page }) => {
       clearedLog = true;
       await json({});
     } else if (url.pathname.endsWith("/logs/amule")) {
-      await json({ lines: [], total_cached: 0, returned: 0 });
+      await json({ lines: [], total_lines: 0, returned_lines: 0 });
     } else if (url.pathname.endsWith("/logs/server_info")) {
       await json({ text: "", total_bytes: 0, returned_bytes: 0 });
     } else if (url.pathname.endsWith("/stats/tree")) {
@@ -181,10 +184,15 @@ test("covers core session and mutation workflows", async ({ page }) => {
       const graph = url.pathname.split("/").at(-1);
       await json({
         graph,
-        unit: graph === "connections" || graph === "kad" ? "count" : "bps",
+        unit: graph === "connections" || graph === "kad_nodes" ? "count" : "bytes_per_second",
         interval_seconds: 1,
         points: [],
-        session: { download_bytes: 0, upload_bytes: 0, kad_bytes: 0 },
+        session: {
+          downloaded_bytes: 0,
+          uploaded_bytes: 0,
+          kad_node_seconds: 0,
+          duration_seconds: 0,
+        },
       });
     } else if (url.pathname.endsWith("/preferences") && request.method() === "PATCH") {
       savedPreferences = request.postDataJSON();
@@ -207,16 +215,16 @@ test("covers core session and mutation workflows", async ({ page }) => {
       await json({ categories: [] });
     } else if (url.pathname.endsWith("/version")) {
       await json({
-        name: "amuleapi",
+        service: "amuleapi",
         api_version: "v1",
         amuleapi_version: "3.1.0",
         daemon_version: "3.0.1",
         update: {
           check_enabled: true,
           checked: false,
-          latest_version: "",
-          update_available: null,
-          last_checked: null,
+          latest_version: null,
+          available: null,
+          last_checked_at: null,
         },
       });
     } else {
@@ -251,7 +259,7 @@ test("covers core session and mutation workflows", async ({ page }) => {
   await page.locator(".search-form").getByRole("button", { name: "Search" }).click();
   await expect(page.getByRole("button", { name: /example finished/ })).toBeVisible();
   await page.getByRole("button", { name: "Close example" }).click();
-  await expect.poll(() => stoppedSearch).toBe("/api/v1/search/7/stop");
+  await expect.poll(() => closedSearch).toBe("/api/v1/search/7");
   await expect(page.getByRole("button", { name: "Close example" })).not.toBeVisible();
 
   await page.locator("nav").getByRole("link", { name: "Servers" }).click();
