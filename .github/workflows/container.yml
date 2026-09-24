@@ -59,21 +59,21 @@ jobs:
             -v "$work_dir/admin-password:/run/secrets/amule_admin_password:ro" \
             amule-console:ci
           for _ in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:14713/api/v0/version >/dev/null; then break; fi
+            if curl --fail --silent http://127.0.0.1:14713/api/v1/health >/dev/null; then break; fi
             sleep 2
           done
-          curl --fail --silent http://127.0.0.1:14713/api/v0/version >/dev/null
+          curl --fail --silent http://127.0.0.1:14713/api/v1/health >/dev/null
           curl --fail --silent http://127.0.0.1:14713/ | grep -q '<div id="root">'
           printf '{"password":"%s"}' "$admin_password" | curl --fail --silent --show-error -c "$work_dir/cookies" \
             -H 'Content-Type: application/json' \
             --data-binary @- \
-            http://127.0.0.1:14713/api/v0/auth/login >/dev/null
+            http://127.0.0.1:14713/api/v1/auth/login >/dev/null
           unset admin_password
           curl --fail --silent --show-error -b "$work_dir/cookies" \
-            http://127.0.0.1:14713/api/v0/status >/dev/null
+            http://127.0.0.1:14713/api/v1/status >/dev/null
           set +e
           curl --silent --show-error --no-buffer --max-time 2 \
-            http://127.0.0.1:14713/api/v0/events >/dev/null
+            http://127.0.0.1:14713/api/v1/events >/dev/null
           stream_status=$?
           set -e
           test "$stream_status" -eq 0 -o "$stream_status" -eq 28
@@ -81,10 +81,10 @@ jobs:
           test -s "$work_dir/config/amuleapi-passwords"
           docker restart amule-smoke >/dev/null
           for _ in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:14713/api/v0/version >/dev/null; then break; fi
+            if curl --fail --silent http://127.0.0.1:14713/api/v1/health >/dev/null; then break; fi
             sleep 2
           done
-          curl --fail --silent http://127.0.0.1:14713/api/v0/version >/dev/null
+          curl --fail --silent http://127.0.0.1:14713/api/v1/health >/dev/null
           test -d "$work_dir/incoming" && test -d "$work_dir/temp"
 
   multiarch:

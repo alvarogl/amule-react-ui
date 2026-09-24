@@ -21,18 +21,39 @@ describe("aMule schemas", () => {
     expect(
       statusSchema.parse({
         ec_connected: true,
-        ed2k: { state: "connected", low_id: false },
-        kad: { state: "connected", firewalled: false },
-        speeds: { download_bps: 1, upload_bps: 2 },
-        queue: { upload_queue_length: 0, total_source_count: 3 },
-      }).ed2k.low_id,
-    ).toBe(false));
+        ed2k: {
+          state: "connected",
+          high_id: true,
+          user_id: 1,
+          public_ip: "203.0.113.1",
+          connected_since_at: 1,
+          server_name: "server",
+          server_ip: "203.0.113.2",
+          server_port: 4661,
+          network: { user_count: 1, file_count: 2 },
+        },
+        kad: {
+          state: "connected",
+          firewalled_tcp: false,
+          connected_since_at: 1,
+          network: { user_count: 1, file_count: 2, node_count: 3 },
+        },
+        speeds: {
+          download_speed_bytes_per_second: 1,
+          upload_speed_bytes_per_second: 2,
+          download_overhead_bytes_per_second: 0,
+          upload_overhead_bytes_per_second: 0,
+        },
+        disk: { temp_free_bytes: 1, incoming_free_bytes: 1 },
+        queue: { waiting_upload_client_count: 0, download_source_count: 3 },
+      }).ed2k.high_id,
+    ).toBe(true));
   it("accepts daemon update availability", () =>
     expect(
       versionSchema.parse({
         name: "amuleapi",
-        api_version: "v0",
-        amule_version: "3.0.1",
+        api_version: "v1",
+        amuleapi_version: "3.1.0",
         daemon_version: "3.0.1",
         update: {
           check_enabled: true,
@@ -53,16 +74,16 @@ describe("aMule schemas", () => {
           {
             hash: "hash",
             name: "file",
-            size: 1,
-            already_have: false,
+            size_bytes: 1,
+            already_downloaded: false,
             sources: { total: 2, complete: 1 },
-            children: [],
+            alternate_names: [],
             rating: 4,
-            kad_comment_search_running: false,
+            kad_comment_lookup_running: false,
             comments: [{ username: "peer", filename: "file", rating: 5, comment: "Good" }],
           },
         ],
-        progress: { state: "finished", kind: "global", percent: 100 },
+        progress: { state: "finished", type: "global", percent: 100 },
       }).results[0].comments,
     ).toHaveLength(1));
   it("accepts a shared-file list entry", () =>
@@ -73,17 +94,20 @@ describe("aMule schemas", () => {
             hash: "hash",
             name: "file",
             ed2k_link: "ed2k://|file|file|1|hash|/",
-            size: 1,
+            size_bytes: 1,
             priority: "normal",
             priority_auto: false,
-            complete_sources: 2,
-            xfer: { session: 0, total: 1 },
-            requests: { session: 0, total: 1 },
-            accepts: { session: 0, total: 1 },
-            upload_speed_bps: 0,
-            uploading: 0,
-            last_upload: 0,
-            shared_since: 0,
+            sources: { complete: 2 },
+            uploaded_bytes_session: 0,
+            uploaded_bytes_total: 1,
+            request_count_session: 0,
+            request_count_total: 1,
+            accepted_request_count_session: 0,
+            accepted_request_count_total: 1,
+            upload_speed_bytes_per_second: 0,
+            uploading_client_count: 0,
+            last_upload_at: 0,
+            shared_since_at: 0,
           },
         ],
       }).shared,
@@ -115,19 +139,20 @@ describe("aMule schemas", () => {
       clientsSchema.parse({
         clients: [
           {
-            client_ecid: 42,
-            client_name: "peer",
+            ecid: 42,
+            name: "peer",
             ip: "203.0.113.42",
             software: "amule",
             software_version: "2.3.3",
             upload_state: "uploading",
             upload_file_name: "file.iso",
-            upload_speed_bps: 10,
+            upload_speed_bytes_per_second: 10,
             download_state: "idle",
-            download_speed_bps: 0,
+            download_file_name: null,
+            download_speed_bytes_per_second: 0,
           },
         ],
-      }).clients[0].client_ecid,
+      }).clients[0].ecid,
     ).toBe(42));
   it("accepts typed statistics tree values and graph samples", () => {
     expect(
@@ -184,7 +209,7 @@ describe("log mutations", () => {
   it("accepts a no-content log clear response", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
 
-    await expect(api.clearAmuleLog()).resolves.toEqual({});
+    await expect(api.clearAmuleLog()).resolves.toBeUndefined();
   });
 });
 

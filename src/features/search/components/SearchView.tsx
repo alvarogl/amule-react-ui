@@ -67,7 +67,7 @@ export function SearchView() {
     mutationFn: ({ hash, ecid }: { hash: string; ecid?: number }) =>
       api.downloadSearchResult(hash, {
         ...(ecid ? { ecid } : {}),
-        category: Number(downloadCategory),
+        category_index: Number(downloadCategory),
       }),
     onSuccess: () => {
       toast.success("Search result added to transfers.");
@@ -138,7 +138,7 @@ export function SearchView() {
         ? left.name.localeCompare(right.name)
         : sort === "sources"
           ? left.sources.total - right.sources.total
-          : left.size - right.size;
+          : left.size_bytes - right.size_bytes;
     return direction === "asc" ? comparison : -comparison;
   });
   return (
@@ -255,7 +255,7 @@ export function SearchView() {
       {results.data && (
         <section className="panel">
           <div className="panel-title">
-            <h2>{results.data.progress.kind} results</h2>
+            <h2>{results.data.progress.type} results</h2>
             <span>
               {results.data.progress.state} · {results.data.progress.percent}%
             </span>
@@ -300,13 +300,13 @@ export function SearchView() {
                 <tbody>
                   {orderedResults.map((item) => {
                     const chosen = chosenNames[item.hash];
-                    const child = item.children.find(
+                    const child = item.alternate_names.find(
                       (candidate) => String(candidate.ecid) === chosen,
                     );
                     return (
                       <tr key={item.hash}>
                         <td title={child?.name ?? item.name}>
-                          {item.children.length > 0 ? (
+                          {item.alternate_names.length > 0 ? (
                             <select
                               className="result-name"
                               aria-label={`Filename for ${item.name}`}
@@ -320,7 +320,7 @@ export function SearchView() {
                               }
                             >
                               <option value="">{item.name}</option>
-                              {item.children.map((candidate) => (
+                              {item.alternate_names.map((candidate) => (
                                 <option key={candidate.ecid} value={candidate.ecid}>
                                   {candidate.name}
                                 </option>
@@ -329,12 +329,14 @@ export function SearchView() {
                           ) : (
                             item.name
                           )}
-                          {item.children.length > 0 && <small>Choose an advertised filename</small>}
+                          {item.alternate_names.length > 0 && (
+                            <small>Choose an advertised filename</small>
+                          )}
                         </td>
                         <td>
                           {item.sources.complete}/{item.sources.total}
                         </td>
-                        <td>{(item.size / 1024 / 1024).toFixed(1)} MiB</td>
+                        <td>{(item.size_bytes / 1024 / 1024).toFixed(1)} MiB</td>
                         <td>
                           <SearchResultNotesDialog
                             result={item}
@@ -343,7 +345,7 @@ export function SearchView() {
                           />
                           <button
                             className="icon"
-                            disabled={item.already_have || download.isPending}
+                            disabled={item.already_downloaded || download.isPending}
                             onClick={() =>
                               download.mutate({
                                 hash: item.hash,

@@ -55,7 +55,7 @@ and UDP P2P ports from the Internet to the Docker host. Configure the same
 ports in `docker.env` if host policy requires different values.
 
 For remote or Internet access, place a TLS reverse proxy in front of the
-complete origin. Proxy `/`, `/api/v0/*`, and `/api/v0/events` together, retain
+complete origin. Proxy `/`, `/api/v1/*`, and `/api/v1/events` together, retain
 HTTP/1.1 and streaming for SSE, and do not enable CORS merely for this UI.
 Reverse-proxy automation is deliberately outside this deployment.
 

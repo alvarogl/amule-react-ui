@@ -9,20 +9,44 @@ export const statusSchema = z.object({
   ec_connected: z.boolean(),
   ed2k: z.object({
     state: z.string(),
-    low_id: z.boolean(),
-    server_name: z.string().optional(),
+    high_id: z.boolean(),
+    user_id: z.number(),
+    public_ip: z.string().nullable(),
+    connected_since_at: z.number(),
+    server_name: z.string().nullable(),
+    server_ip: z.string().nullable(),
+    server_port: z.number().nullable(),
+    network: z.object({ user_count: z.number().nullable(), file_count: z.number().nullable() }),
   }),
-  kad: z.object({ state: z.string(), firewalled: z.boolean() }),
-  speeds: z.object({ download_bps: z.number(), upload_bps: z.number() }),
+  kad: z.object({
+    state: z.string(),
+    firewalled_tcp: z.boolean().nullable(),
+    connected_since_at: z.number(),
+    network: z.object({
+      user_count: z.number().nullable(),
+      file_count: z.number().nullable(),
+      node_count: z.number().nullable(),
+    }),
+  }),
+  speeds: z.object({
+    download_speed_bytes_per_second: z.number(),
+    upload_speed_bytes_per_second: z.number(),
+    download_overhead_bytes_per_second: z.number(),
+    upload_overhead_bytes_per_second: z.number(),
+  }),
+  disk: z.object({
+    temp_free_bytes: z.number().nullable(),
+    incoming_free_bytes: z.number().nullable(),
+  }),
   queue: z.object({
-    upload_queue_length: z.number(),
-    total_source_count: z.number(),
+    waiting_upload_client_count: z.number(),
+    download_source_count: z.number(),
   }),
 });
 export const versionSchema = z.object({
   name: z.literal("amuleapi"),
   api_version: z.string(),
-  amule_version: z.string(),
+  amuleapi_version: z.string(),
   daemon_version: z.string(),
   update: z.object({
     check_enabled: z.boolean(),
@@ -36,9 +60,9 @@ export const downloadSchema = z
   .object({
     hash: z.string(),
     name: z.string(),
-    size: z.number().optional(),
-    size_done: z.number().optional(),
-    size_xfer: z.number().optional(),
+    size_bytes: z.number(),
+    completed_bytes: z.number(),
+    transferred_bytes: z.number(),
     progress: z
       .object({
         percent: z.number(),
@@ -46,28 +70,28 @@ export const downloadSchema = z
       })
       .optional(),
     status: z.string(),
-    speed_bps: z.number().optional(),
-    category: z.number().optional(),
+    speed_bytes_per_second: z.number(),
+    category_index: z.number(),
     priority: z.enum(["low", "normal", "high"]).optional(),
     priority_auto: z.boolean().optional(),
     sources: z
       .object({
         total: z.number(),
-        not_current: z.number(),
+        unavailable: z.number(),
         transferring: z.number(),
         a4af: z.number(),
       })
       .optional(),
     available_part_count: z.number().optional(),
-    part_count: z.number().optional(),
-    remaining_time: z.number().optional(),
+    total_part_count: z.number().optional(),
+    remaining_seconds: z.number().nullable().optional(),
   })
   .passthrough();
 export const downloadsSchema = z.object({ downloads: z.array(downloadSchema) }).passthrough();
 const searchSchema = z.object({
   search_id: z.number(),
   query: z.string(),
-  kind: z.enum(["local", "global", "kad"]),
+  type: z.enum(["local", "global", "kad", "browse"]),
   state: z.string(),
 });
 export const searchesSchema = z.object({ searches: z.array(searchSchema) });
@@ -78,12 +102,19 @@ export const searchResultsSchema = z.object({
       .object({
         hash: z.string(),
         name: z.string(),
-        size: z.number(),
-        already_have: z.boolean(),
+        size_bytes: z.number(),
+        already_downloaded: z.boolean(),
         sources: z.object({ total: z.number(), complete: z.number() }),
-        children: z.array(z.object({ ecid: z.number(), name: z.string() })),
+        alternate_names: z.array(
+          z.object({
+            ecid: z.number(),
+            name: z.string(),
+            sources: z.object({ total: z.number(), complete: z.number() }),
+            directory: z.string(),
+          }),
+        ),
         rating: z.number().optional(),
-        kad_comment_search_running: z.boolean().optional(),
+        kad_comment_lookup_running: z.boolean(),
         comments: z
           .array(
             z.object({
@@ -99,7 +130,7 @@ export const searchResultsSchema = z.object({
   ),
   progress: z.object({
     state: z.string(),
-    kind: z.string(),
+    type: z.string(),
     percent: z.number(),
   }),
 });
@@ -113,7 +144,7 @@ export const serversSchema = z.object({
         users: z.number(),
         files: z.number(),
         priority: z.string(),
-        static: z.boolean(),
+        permanent: z.boolean(),
       })
       .passthrough(),
   ),
@@ -124,7 +155,7 @@ export const categoriesSchema = z.object({
       .object({
         index: z.number(),
         name: z.string(),
-        path: z.string(),
+        save_path: z.string(),
         comment: z.string().optional(),
       })
       .passthrough(),
@@ -135,26 +166,30 @@ export const sharedFileSchema = z
     hash: z.string(),
     name: z.string(),
     ed2k_link: z.string(),
-    size: z.number(),
+    size_bytes: z.number(),
     priority: z.enum(["very_low", "low", "normal", "high", "release"]),
     priority_auto: z.boolean(),
-    complete_sources: z.number(),
-    xfer: z.object({ session: z.number(), total: z.number() }),
-    requests: z.object({ session: z.number(), total: z.number() }),
-    accepts: z.object({ session: z.number(), total: z.number() }),
-    upload_speed_bps: z.number(),
-    uploading: z.number(),
-    last_upload: z.number(),
-    shared_since: z.number(),
+    sources: z.object({ complete: z.number() }),
+    uploaded_bytes_session: z.number(),
+    uploaded_bytes_total: z.number(),
+    request_count_session: z.number(),
+    request_count_total: z.number(),
+    accepted_request_count_session: z.number(),
+    accepted_request_count_total: z.number(),
+    upload_speed_bytes_per_second: z.number(),
+    uploading_client_count: z.number(),
+    last_upload_at: z.number().nullable(),
+    shared_since_at: z.number().nullable(),
     file_type: z.string().optional(),
     share_ratio: z.number().optional(),
-    path: z.string().optional(),
-    complete_sources_range: z.object({ low: z.number(), high: z.number() }).optional(),
+    directory: z.string().optional(),
+    incomplete: z.boolean().optional(),
+    total_part_count: z.number().optional(),
+    upload_ratio: z.number().optional(),
+    upload_queue_count: z.number().optional(),
+    my_comment: z.string().optional(),
+    my_rating: z.number().optional(),
     aich_hash: z.string().optional(),
-    part_count: z.number().optional(),
-    queued_count: z.number().optional(),
-    comment: z.string().optional(),
-    rating: z.number().optional(),
   })
   .passthrough();
 export const sharedFilesSchema = z.object({ shared: z.array(sharedFileSchema) }).passthrough();
@@ -236,36 +271,39 @@ export const statisticsGraphSchema = z.object({
 });
 export const preferencesSchema = z.record(z.string(), z.unknown());
 export const passwordStatusSchema = z.object({
-  admin_set: z.boolean(),
-  guest_enabled: z.boolean(),
+  admin_password_set: z.boolean(),
+  guest_access_enabled: z.boolean(),
 });
-const sharedDirectoryMutationSchema = z
-  .object({
-    ok: z.literal(true),
-    rejected: z.array(z.object({ path: z.string(), reason: z.string() })).default([]),
-  })
-  .passthrough();
+const bulkResultsSchema = z.object({
+  results: z.array(
+    z.object({
+      id: z.string(),
+      ok: z.boolean(),
+      error: z.object({ code: z.string(), message: z.string() }).optional(),
+    }),
+  ),
+});
 export const clientSchema = z
   .object({
-    client_ecid: z.number(),
-    client_name: z.string(),
-    ip: z.string(),
-    software: z.string(),
-    software_version: z.string(),
+    ecid: z.number(),
+    name: z.string().nullable(),
+    ip: z.string().nullable(),
+    software: z.string().nullable(),
+    software_version: z.string().nullable(),
     upload_state: z.string(),
     download_state: z.string().optional(),
-    upload_file_name: z.string(),
-    download_file_name: z.string().optional(),
-    upload_speed_bps: z.number(),
-    download_speed_bps: z.number().optional(),
+    upload_file_name: z.string().nullable(),
+    download_file_name: z.string().nullable(),
+    upload_speed_bytes_per_second: z.number(),
+    download_speed_bytes_per_second: z.number(),
     country_code: z.string().optional(),
     port: z.number().optional(),
     os_info: z.string().optional(),
     ident_state: z.string().optional(),
     obfuscation_status: z.string().optional(),
-    queue_waiting_position: z.number().optional(),
-    remote_queue_rank: z.number().optional(),
-    score: z.number().optional(),
+    upload_queue_position: z.number().optional(),
+    remote_queue_position: z.number().optional(),
+    upload_queue_score: z.number().optional(),
     high_id: z.boolean().optional(),
     server_name: z.string().optional(),
     server_ip: z.string().optional(),
@@ -274,31 +312,27 @@ export const clientSchema = z
     source_origin: z.string().optional(),
     available_parts: z.number().optional(),
     mod_version: z.string().optional(),
-    view_shared_disabled: z.boolean().optional(),
-    is_friend: z.boolean().optional(),
+    shared_files_browsable: z.boolean().optional(),
+    friend: z.boolean().optional(),
     friend_slot: z.boolean().optional(),
-    dl_up_modifier: z.number().optional(),
+    credit_ratio: z.number().nullable().optional(),
     part_progress_percent: z.number().optional(),
-    xfer: z
-      .object({
-        up_session: z.number(),
-        down_session: z.number(),
-        up_total: z.number(),
-        down_total: z.number(),
-      })
-      .optional(),
+    uploaded_bytes_session: z.number().optional(),
+    downloaded_bytes_session: z.number().optional(),
+    uploaded_bytes_total: z.number().optional(),
+    downloaded_bytes_total: z.number().optional(),
   })
   .passthrough();
 export const clientsSchema = z.object({ clients: z.array(clientSchema) });
 export const loginSchema = z.object({
-  role: z.literal("admin"),
-  expires_at: z.string(),
+  role: z.enum(["admin", "guest"]),
+  expires_at: z.number(),
+  session_id: z.string(),
 });
 export const sessionSchema = z.object({
-  role: z.literal("admin"),
-  exp: z.string(),
-  exp_unix: z.number(),
-  jti: z.string(),
+  role: z.enum(["admin", "guest"]),
+  expires_at: z.number(),
+  session_id: z.string(),
 });
 export type Status = z.infer<typeof statusSchema>;
 export type Download = z.infer<typeof downloadSchema>;
@@ -308,9 +342,9 @@ export type Client = z.infer<typeof clientSchema>;
 export type SearchFilters = {
   file_type?: string;
   extension?: string;
-  min_size?: number;
-  max_size?: number;
-  min_avail?: number;
+  min_size_bytes?: number;
+  max_size_bytes?: number;
+  min_source_count?: number;
 };
 
 export class ApiError extends Error {
@@ -341,123 +375,125 @@ async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit
   }
   return schema.parse(json);
 }
+async function requestEmpty(path: string, init?: RequestInit): Promise<void> {
+  const url = uiConfig.apiBase.startsWith("http")
+    ? `${uiConfig.apiBase}${path}`
+    : new URL(`${uiConfig.apiBase}${path}`, window.location.origin).toString();
+  const response = await fetch(url, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...init?.headers },
+    ...init,
+  });
+  if (response.ok) return;
+  const json: unknown = await response.json().catch(() => ({}));
+  if (response.status === 401) notifyUnauthorized();
+  const parsed = errorSchema.safeParse(json);
+  throw new ApiError(
+    response.status,
+    parsed.success ? parsed.data.error.message : `Request failed (${response.status})`,
+  );
+}
 export const api = {
   login: (password: string) =>
     request("/auth/login", loginSchema, {
       method: "POST",
       body: JSON.stringify({ password }),
     }),
-  logout: () => request("/auth/logout", z.unknown(), { method: "POST" }),
+  logout: () => requestEmpty("/auth/logout", { method: "POST" }),
   session: () => request("/auth/session", sessionSchema),
   status: () => request("/status", statusSchema),
   version: () => request("/version", versionSchema),
-  checkVersion: () =>
-    request("/version/check", z.object({ status: z.literal("started") }), { method: "POST" }),
-  downloads: () => request("/downloads?include_completed=true", downloadsSchema),
+  checkVersion: () => requestEmpty("/version/check", { method: "POST" }),
+  downloads: () => request("/downloads?status=all", downloadsSchema),
   searches: () => request("/search", searchesSchema),
   startSearch: (query: string, type: "local" | "global" | "kad", filters: SearchFilters = {}) =>
     request(
       "/search",
       z.object({
-        ok: z.literal(true),
         search_id: z.number(),
         query: z.string(),
+        type: z.enum(["local", "global", "kad"]),
+        state: z.string(),
+        client_ecid: z.number().nullable(),
       }),
       { method: "POST", body: JSON.stringify({ query, type, ...filters }) },
     ),
-  searchResults: (searchId: number) =>
-    request(`/search/results?search_id=${searchId}`, searchResultsSchema),
-  stopSearch: (searchId: number) =>
-    request("/search/stop", z.object({ ok: z.literal(true) }), {
-      method: "POST",
-      body: JSON.stringify({ search_id: searchId, close: true }),
-    }),
-  downloadSearchResult: (hash: string, options: { ecid?: number; category?: number } = {}) =>
-    request(`/search/results/${hash}/download`, z.object({ ok: z.literal(true) }).passthrough(), {
+  searchResults: (searchId: number) => request(`/search/${searchId}/results`, searchResultsSchema),
+  stopSearch: (searchId: number) => requestEmpty(`/search/${searchId}/stop`, { method: "POST" }),
+  downloadSearchResult: (hash: string, options: { ecid?: number; category_index?: number } = {}) =>
+    requestEmpty(`/search/results/${hash}/download`, {
       method: "POST",
       body: JSON.stringify(options),
     }),
   requestSearchResultComments: (hash: string) =>
-    request(`/search/results/${hash}/comments`, z.object({ status: z.string() }).passthrough(), {
-      method: "POST",
-    }),
+    requestEmpty(`/search/results/${hash}/comments`, { method: "POST" }),
   servers: () => request("/servers", serversSchema),
-  clients: (filter: "uploads" | "downloads" | "active" | "all" = "all") =>
-    request(filter === "all" ? "/clients" : `/clients?filter=${filter}`, clientsSchema),
+  clients: (filter: "uploading" | "downloading" | "active" | "all" = "all") =>
+    request(filter === "all" ? "/clients" : `/clients?activity=${filter}`, clientsSchema),
   client: (ecid: number) => request(`/clients/${ecid}`, clientSchema),
   browseClientSharedFiles: (ecid: number) =>
-    request(
-      `/clients/${ecid}/shared_files`,
-      z.object({ ok: z.literal(true), search_id: z.number() }),
-      {
-        method: "POST",
-      },
-    ),
-  uploadClients: () => request("/clients?filter=uploads", clientsSchema),
+    request(`/clients/${ecid}/shared_files`, searchSchema, {
+      method: "POST",
+    }),
+  uploadClients: () => request("/clients?activity=uploads", clientsSchema),
   addServer: (address: string, name: string) =>
-    request("/servers", z.object({ ok: z.literal(true) }).passthrough(), {
+    requestEmpty("/servers", {
       method: "POST",
       body: JSON.stringify({ address, name: name || undefined }),
     }),
-  connectServer: (ecid: number) =>
-    request(`/servers/${ecid}/connect`, z.object({ ok: z.literal(true) }).passthrough(), {
-      method: "POST",
-    }),
-  removeServer: (ecid: number) =>
-    request(`/servers/${ecid}`, z.object({ ok: z.literal(true) }).passthrough(), {
-      method: "DELETE",
-    }),
-  patchServer: (ecid: number, patch: { priority?: "low" | "normal" | "high"; static?: boolean }) =>
-    request(`/servers/${ecid}`, z.object({ ok: z.literal(true) }).passthrough(), {
+  connectServer: (ecid: number) => requestEmpty(`/servers/${ecid}/connect`, { method: "POST" }),
+  removeServer: (ecid: number) => requestEmpty(`/servers/${ecid}`, { method: "DELETE" }),
+  patchServer: (
+    ecid: number,
+    patch: { priority?: "low" | "normal" | "high"; permanent?: boolean },
+  ) =>
+    request(`/servers/${ecid}`, serversSchema.shape.servers.element, {
       method: "PATCH",
       body: JSON.stringify(patch),
     }),
   updateServers: (servers_url: string) =>
-    request("/servers/update", z.object({ ok: z.literal(true) }).passthrough(), {
+    requestEmpty("/servers_update", {
       method: "POST",
-      body: JSON.stringify({ servers_url }),
+      body: JSON.stringify({ url: servers_url }),
     }),
   network: (action: "connect" | "disconnect", network: "ed2k" | "kad" | "both") =>
-    request(`/networks/${action}`, z.unknown(), {
+    requestEmpty(`/networks/${action}`, {
       method: "POST",
       body: JSON.stringify({ network }),
     }),
   categories: () => request("/categories", categoriesSchema),
   sharedFiles: () => request("/shared", sharedFilesSchema),
   sharedFile: (hash: string) => request(`/shared/${hash}`, sharedFileSchema),
-  sharedDirectories: () => request("/shared/directories", sharedDirectoriesSchema),
+  sharedDirectories: () => request("/share_directories", sharedDirectoriesSchema),
   addSharedDirectory: (path: string, recursive: boolean) =>
-    request("/shared/directories", sharedDirectoryMutationSchema, {
+    request("/share_directories", bulkResultsSchema, {
       method: "POST",
       body: JSON.stringify({ path, recursive }),
     }),
   replaceSharedDirectories: (directories: Array<{ path: string; recursive: boolean }>) =>
-    request("/shared/directories", sharedDirectoryMutationSchema, {
+    request("/share_directories", bulkResultsSchema, {
       method: "PUT",
       body: JSON.stringify({ directories }),
     }),
   removeSharedDirectory: (path: string) =>
-    request(`/shared/directories?path=${encodeURIComponent(path)}`, sharedDirectoryMutationSchema, {
+    request(`/share_directories?path=${encodeURIComponent(path)}`, bulkResultsSchema, {
       method: "DELETE",
     }),
   kad: () => request("/kad", kadSchema),
-  bootstrapKad: (ip: string | number, port: number) =>
-    request("/kad/bootstrap", z.object({ ok: z.literal(true), ip: z.number(), port: z.number() }), {
+  bootstrapKad: (ip: string, port: number) =>
+    requestEmpty("/kad/bootstrap", {
       method: "POST",
       body: JSON.stringify({ ip, port }),
     }),
   updateKadNodes: (nodes_url: string) =>
-    request("/kad/update", z.object({ ok: z.literal(true), nodes_url: z.string() }), {
+    requestEmpty("/kad/update", {
       method: "POST",
-      body: JSON.stringify({ nodes_url }),
+      body: JSON.stringify({ url: nodes_url }),
     }),
   amuleLog: (tail = 500) => request(`/logs/amule?tail=${tail}`, amuleLogSchema),
-  clearAmuleLog: () => request("/logs/amule", z.unknown(), { method: "DELETE" }),
-  serverInfoLog: (tail = 500) => request(`/logs/serverinfo?tail=${tail}`, serverInfoLogSchema),
-  clearServerInfoLog: () =>
-    request("/logs/serverinfo", z.unknown(), {
-      method: "DELETE",
-    }),
+  clearAmuleLog: () => requestEmpty("/logs/amule", { method: "DELETE" }),
+  serverInfoLog: (tail = 500) => request(`/logs/server_info?tail=${tail}`, serverInfoLogSchema),
+  clearServerInfoLog: () => requestEmpty("/logs/server_info", { method: "DELETE" }),
   statisticsTree: () => request("/stats/tree", statisticsTreeSchema),
   statisticsGraph: (graph: "download" | "upload" | "connections" | "kad", width = 300) =>
     request(`/stats/graphs/${graph}?width=${width}`, statisticsGraphSchema),
@@ -472,67 +508,59 @@ export const api = {
     current_password: string;
     admin_password?: string;
     guest_password?: string;
-    guest_enabled?: boolean;
+    guest_access_enabled?: boolean;
   }) =>
     request("/auth/passwords", passwordStatusSchema.passthrough(), {
       method: "PATCH",
       body: JSON.stringify(patch),
     }),
-  reloadSharedFiles: () =>
-    request("/shared/reload", z.object({ ok: z.literal(true) }).passthrough(), { method: "POST" }),
+  reloadSharedFiles: () => requestEmpty("/shared_reload", { method: "POST" }),
   patchSharedFile: (
     hash: string,
     patch: {
       priority?: "very_low" | "low" | "normal" | "high" | "release" | "auto";
       name?: string;
-      comment?: string;
-      rating?: number;
+      my_comment?: string;
+      my_rating?: number;
     },
   ) =>
     request(`/shared/${hash}`, sharedFileSchema, {
       method: "PATCH",
       body: JSON.stringify(patch),
     }),
-  verifySharedFile: (hash: string) =>
-    request(`/shared/${hash}/verify`, z.object({ ok: z.literal(true) }).passthrough(), {
+  verifySharedFile: (hash: string) => requestEmpty(`/shared/${hash}/verify`, { method: "POST" }),
+  addCategory: (name: string, save_path?: string) =>
+    requestEmpty("/categories", {
       method: "POST",
+      body: JSON.stringify({ name, ...(save_path ? { save_path } : {}) }),
     }),
-  addCategory: (name: string, path?: string) =>
-    request("/categories", z.object({ index: z.number(), name: z.string() }).passthrough(), {
-      method: "POST",
-      body: JSON.stringify({ name, ...(path ? { path } : {}) }),
-    }),
-  patchCategory: (index: number, patch: { name?: string; path?: string }) =>
-    request(`/categories/${index}`, z.object({ ok: z.literal(true) }).passthrough(), {
+  patchCategory: (index: number, patch: { name?: string; save_path?: string }) =>
+    request(`/categories/${index}`, categoriesSchema.shape.categories.element, {
       method: "PATCH",
       body: JSON.stringify(patch),
     }),
-  removeCategory: (index: number) =>
-    request(`/categories/${index}`, z.object({ ok: z.literal(true) }).passthrough(), {
-      method: "DELETE",
-    }),
+  removeCategory: (index: number) => requestEmpty(`/categories/${index}`, { method: "DELETE" }),
   setDownloadCategory: (hash: string, category: number) =>
     request(`/downloads/${hash}`, z.unknown(), {
       method: "PATCH",
-      body: JSON.stringify({ category }),
+      body: JSON.stringify({ category_index: category }),
     }),
   bulkDownloads: (
     hashes: string[],
     patch: {
-      status?: "paused" | "resumed";
+      action?: "pause" | "resume" | "stop";
       priority?: "low" | "normal" | "high" | "auto";
     },
   ) =>
-    request("/downloads", z.object({ results: z.array(z.unknown()).optional() }).passthrough(), {
+    request("/downloads", bulkResultsSchema, {
       method: "PATCH",
       body: JSON.stringify({ hashes, ...patch }),
     }),
   clearCompleted: (hash?: string) =>
-    request(
-      "/downloads/clear_completed",
-      z.object({ ok: z.literal(true), cleared: z.number() }).passthrough(),
-      { method: "POST", ...(hash ? { body: JSON.stringify({ hash }) } : {}) },
-    ),
+    request("/downloads_clear_completed", bulkResultsSchema, {
+      method: "POST",
+      ...(hash ? { body: JSON.stringify({ hash }) } : {}),
+    }),
   downloadDetail: (hash: string) => request(`/downloads/${hash}`, downloadSchema),
   downloadFilenames: (hash: string) =>
     request(
@@ -580,29 +608,19 @@ export const api = {
       { method: "POST", body: JSON.stringify({ links }) },
     ),
   downloadAction: (hash: string, action: "pause" | "resume") =>
-    request(`/downloads/${hash}`, z.unknown(), {
+    request(`/downloads/${hash}`, downloadSchema, {
       method: "PATCH",
-      body: JSON.stringify({
-        status: action === "pause" ? "paused" : "resumed",
-      }),
+      body: JSON.stringify({ action }),
     }),
   renameDownload: (hash: string, name: string) =>
     request(`/downloads/${hash}`, downloadSchema, {
       method: "PATCH",
       body: JSON.stringify({ name }),
     }),
-  removeDownload: (hash: string) =>
-    request(`/downloads/${hash}`, z.object({ ok: z.literal(true) }).passthrough(), {
-      method: "DELETE",
-    }),
+  removeDownload: (hash: string) => requestEmpty(`/downloads/${hash}`, { method: "DELETE" }),
   removeDownloads: (hashes: string[]) =>
-    request(
-      "/downloads",
-      z
-        .object({
-          results: z.array(z.object({ id: z.string(), ok: z.boolean() }).passthrough()).optional(),
-        })
-        .passthrough(),
-      { method: "DELETE", body: JSON.stringify({ hashes }) },
-    ),
+    request("/downloads", bulkResultsSchema, {
+      method: "DELETE",
+      body: JSON.stringify({ hashes }),
+    }),
 };

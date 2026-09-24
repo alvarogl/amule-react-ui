@@ -33,8 +33,11 @@ function setup() {
         hash: "download-1",
         name: "example.iso",
         status: "downloading",
-        size: 100,
-        size_done: 10,
+        size_bytes: 100,
+        completed_bytes: 10,
+        transferred_bytes: 10,
+        speed_bytes_per_second: 1,
+        category_index: 0,
         progress: { percent: 10 },
       },
     ],
@@ -71,15 +74,18 @@ describe("live update subscription", () => {
       hash: "download-1",
       name: "example.iso",
       status: "downloading",
-      size: 100,
-      size_done: 25,
+      size_bytes: 100,
+      completed_bytes: 25,
+      transferred_bytes: 25,
+      speed_bytes_per_second: 1,
+      category_index: 0,
       progress: { percent: 25 },
     } satisfies Download);
 
     expect(liveEventTypes).toContain("download_updated");
     expect(setQueryData).toHaveBeenCalledWith(["downloads"], expect.any(Function));
     expect(setQueryData).toHaveBeenCalledWith(["download", "download-1"], expect.anything());
-    expect(getDownloads().downloads[0]?.size_done).toBe(25);
+    expect(getDownloads().downloads[0]?.completed_bytes).toBe(25);
     expect(invalidateQueries).not.toHaveBeenCalledWith({ queryKey: ["downloads"] });
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["search-results"] });
   });
@@ -88,20 +94,43 @@ describe("live update subscription", () => {
     const { invalidateQueries, setQueryData, stream } = setup();
     const status = {
       ec_connected: true,
-      ed2k: { state: "connected", low_id: false, server_name: "Example server" },
-      kad: { state: "connected", firewalled: false },
-      speeds: { download_bps: 25, upload_bps: 10 },
-      queue: { upload_queue_length: 4, total_source_count: 12 },
+      ed2k: {
+        state: "connected",
+        high_id: true,
+        user_id: 1,
+        public_ip: "192.0.2.1",
+        connected_since_at: 1,
+        server_name: "Example server",
+        server_ip: "192.0.2.2",
+        server_port: 4661,
+        network: { user_count: 1, file_count: 2 },
+      },
+      kad: {
+        state: "connected",
+        firewalled_tcp: false,
+        connected_since_at: 1,
+        network: { user_count: 1, file_count: 2, node_count: 3 },
+      },
+      speeds: {
+        download_speed_bytes_per_second: 25,
+        upload_speed_bytes_per_second: 10,
+        download_overhead_bytes_per_second: 0,
+        upload_overhead_bytes_per_second: 0,
+      },
+      disk: { temp_free_bytes: 1, incoming_free_bytes: 1 },
+      queue: { waiting_upload_client_count: 4, download_source_count: 12 },
     } satisfies Status;
     const client = {
-      client_ecid: 7,
-      client_name: "Peer",
+      ecid: 7,
+      name: "Peer",
       ip: "192.0.2.1",
       software: "emule",
       software_version: "0.50a",
       upload_state: "uploading",
       upload_file_name: "example.iso",
-      upload_speed_bps: 10,
+      upload_speed_bytes_per_second: 10,
+      download_file_name: null,
+      download_speed_bytes_per_second: 0,
     } satisfies Client;
 
     stream.emit("status_changed", status);

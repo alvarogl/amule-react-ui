@@ -23,7 +23,7 @@ services:
       - amule_admin_password
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:4713/api/v0/version"]
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:4713/api/v1/health"]
       interval: 30s
       timeout: 5s
       start_period: 30s

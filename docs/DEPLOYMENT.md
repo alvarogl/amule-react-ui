@@ -59,7 +59,7 @@ Verify the unauthenticated version endpoint and static entry page from the
 aMule host:
 
 ```bash
-curl --fail http://127.0.0.1:4713/api/v0/version
+curl --fail http://127.0.0.1:4713/api/v1/health
 curl --fail http://127.0.0.1:4713/
 ```
 
@@ -111,13 +111,13 @@ For `pnpm dev`, copy `.env.example` to `.env` and set only
 `VITE_DEV_API_ORIGIN` when the development server must proxy to a different
 reachable aMule API listener. The three `VITE_*` values are build-time public
 configuration, so they must never contain passwords, tokens, or private
-credentials. Production paths should remain relative (`/api/v0` and
-`/api/v0/events`) so the UI, REST API, and SSE stream share one origin.
+credentials. Production paths should remain relative (`/api/v1` and
+`/api/v1/events`) so the UI, REST API, and SSE stream share one origin.
 
 ## Network security
 
 The safest deployment keeps `BindAddress=127.0.0.1` and uses a TLS reverse
-proxy for remote access. Proxy the complete origin, including `/api/v0/events`;
+proxy for remote access. Proxy the complete origin, including `/api/v1/events`;
 for nginx, use HTTP/1.1 so SSE works. Restrict firewall access to the intended
 network even for a LAN-only deployment.
 

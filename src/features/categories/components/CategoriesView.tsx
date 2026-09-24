@@ -11,7 +11,7 @@ import { QueryNotice } from "@/shared/components/QueryNotice";
 export function CategoriesView() {
   const [name, setName] = useState("");
   const [path, setPath] = useState("");
-  const [drafts, setDrafts] = useState<Record<number, { name: string; path: string }>>({});
+  const [drafts, setDrafts] = useState<Record<number, { name: string; save_path: string }>>({});
   const client = useQueryClient();
   const categories = useQuery({
     queryKey: queryKeys.categories,
@@ -31,7 +31,7 @@ export function CategoriesView() {
     onError: (error) => toast.error(getErrorMessage(error)),
   });
   const save = useMutation({
-    mutationFn: ({ index, patch }: { index: number; patch: { name: string; path: string } }) =>
+    mutationFn: ({ index, patch }: { index: number; patch: { name: string; save_path: string } }) =>
       api.patchCategory(index, patch),
     onSuccess: (_, { index }) => {
       setDrafts((all) => {
@@ -92,7 +92,8 @@ export function CategoriesView() {
             <tbody>
               {customCategories.map((category) => {
                 const draft = drafts[category.index] ?? category;
-                const changed = draft.name !== category.name || draft.path !== category.path;
+                const changed =
+                  draft.name !== category.name || draft.save_path !== category.save_path;
                 return (
                   <tr key={category.index}>
                     <td>
@@ -115,13 +116,13 @@ export function CategoriesView() {
                       <input
                         className="category-input"
                         aria-label={`Path for ${category.name}`}
-                        value={draft.path}
+                        value={draft.save_path}
                         onChange={(event) =>
                           setDrafts((all) => ({
                             ...all,
                             [category.index]: {
                               ...draft,
-                              path: event.target.value,
+                              save_path: event.target.value,
                             },
                           }))
                         }

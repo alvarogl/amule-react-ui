@@ -62,7 +62,7 @@ function VersionChecker() {
       <div>
         <strong>Software updates</strong>
         <span>{state}</span>
-        <small>Running {version.data.daemon_version || version.data.amule_version}</small>
+        <small>Running {version.data.daemon_version}</small>
       </div>
       <button
         className="muted"
@@ -324,8 +324,8 @@ function PasswordManager() {
         current_password: currentPassword,
         ...(adminPassword ? { admin_password: adminPassword } : {}),
         ...(guestPassword ? { guest_password: guestPassword } : {}),
-        ...(resolvedGuestEnabled !== status.data?.guest_enabled
-          ? { guest_enabled: resolvedGuestEnabled }
+        ...(resolvedGuestEnabled !== status.data?.guest_access_enabled
+          ? { guest_access_enabled: resolvedGuestEnabled }
           : {}),
       }),
     onSuccess: () => {
@@ -338,9 +338,9 @@ function PasswordManager() {
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
-  const resolvedGuestEnabled = guestEnabled ?? status.data?.guest_enabled ?? false;
+  const resolvedGuestEnabled = guestEnabled ?? status.data?.guest_access_enabled ?? false;
   const hasChange = Boolean(
-    adminPassword || guestPassword || resolvedGuestEnabled !== status.data?.guest_enabled,
+    adminPassword || guestPassword || resolvedGuestEnabled !== status.data?.guest_access_enabled,
   );
   return (
     <section className="panel preference-group password-manager">
