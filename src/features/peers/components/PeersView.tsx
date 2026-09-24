@@ -11,13 +11,13 @@ import { useSortState } from "@/shared/hooks/use-sort-state";
 import { getErrorMessage } from "@/shared/lib/errors";
 import { formatMebibytes, formatRate } from "@/shared/lib/formatters";
 
-type PeerFilter = "all" | "active" | "uploads" | "downloads";
+type PeerFilter = "all" | "active" | "uploading" | "downloading";
 type PeerSort = "name" | "software" | "upload" | "download" | "state";
 
 function PeerBrowse({ peer }: { peer: Client }) {
   const [searchId, setSearchId] = useState<number>();
   const browse = useMutation({
-    mutationFn: () => api.browseClientSharedFiles(peer.client_ecid),
+    mutationFn: () => api.browseClientSharedFiles(peer.ecid),
     onSuccess: ({ search_id }) => setSearchId(search_id),
     onError: (error) => toast.error(getErrorMessage(error)),
   });
@@ -37,12 +37,14 @@ function PeerBrowse({ peer }: { peer: Client }) {
       <div className="peer-browse-start">
         <p>Request this peer’s shared files. The peer may take a moment to respond.</p>
         <button
-          disabled={browse.isPending || peer.view_shared_disabled}
+          disabled={browse.isPending || peer.shared_files_browsable === false}
           onClick={() => browse.mutate()}
         >
           Browse shared files
         </button>
-        {peer.view_shared_disabled && <span>This peer does not allow shared-file browsing.</span>}
+        {peer.shared_files_browsable === false && (
+          <span>This peer does not allow shared-file browsing.</span>
+        )}
       </div>
     );
   if (results.isPending || results.isError)
@@ -76,13 +78,13 @@ function PeerBrowse({ peer }: { peer: Client }) {
                   <td className="filename-cell" title={file.name}>
                     {file.name}
                   </td>
-                  <td>{formatMebibytes(file.size)}</td>
+                  <td>{formatMebibytes(file.size_bytes)}</td>
                   <td>{file.sources.total}</td>
                   <td>
                     <button
                       className="icon"
-                      disabled={file.already_have || add.isPending}
-                      title={file.already_have ? "Already in downloads" : "Download file"}
+                      disabled={file.already_downloaded || add.isPending}
+                      title={file.already_downloaded ? "Already in downloads" : "Download file"}
                       onClick={() => add.mutate(file.hash)}
                     >
                       <Download size={15} />
@@ -105,26 +107,22 @@ function PeerBrowse({ peer }: { peer: Client }) {
 function PeerDetails({ peer }: { peer: Client }) {
   const [open, setOpen] = useState(false);
   const detail = useQuery({
-    queryKey: queryKeys.client(peer.client_ecid),
-    queryFn: () => api.client(peer.client_ecid),
+    queryKey: queryKeys.client(peer.ecid),
+    queryFn: () => api.client(peer.ecid),
     enabled: open,
   });
   const data = detail.data;
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
-        <button
-          className="icon"
-          title="Peer details"
-          aria-label={`Details for ${peer.client_name}`}
-        >
+        <button className="icon" title="Peer details" aria-label={`Details for ${peer.name}`}>
           <Info size={15} />
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="drawer-overlay" />
         <Dialog.Content className="drawer peer-details">
-          <Dialog.Title>{peer.client_name || "Anonymous peer"}</Dialog.Title>
+          <Dialog.Title>{peer.name || "Anonymous peer"}</Dialog.Title>
           <Dialog.Close className="icon drawer-close" aria-label="Close">
             <X size={16} />
           </Dialog.Close>
@@ -162,11 +160,13 @@ function PeerDetails({ peer }: { peer: Client }) {
                 <dd>{data.server_name || "Unknown"}</dd>
                 <dt>Upload</dt>
                 <dd>
-                  {formatRate(data.upload_speed_bps)} · {formatMebibytes(data.xfer?.up_session)}
+                  {formatRate(data.upload_speed_bytes_per_second)} ·{" "}
+                  {formatMebibytes(data.uploaded_bytes_session)}
                 </dd>
                 <dt>Download</dt>
                 <dd>
-                  {formatRate(data.download_speed_bps)} · {formatMebibytes(data.xfer?.down_session)}
+                  {formatRate(data.download_speed_bytes_per_second)} ·{" "}
+                  {formatMebibytes(data.downloaded_bytes_session)}
                 </dd>
                 <dt>Transfer state</dt>
                 <dd>
@@ -198,10 +198,10 @@ export function PeersView() {
   });
   const ordered = [...(peers.data?.clients ?? [])].sort((left, right) => {
     const value = (peer: Client) => {
-      if (sort === "name") return peer.client_name;
+      if (sort === "name") return peer.name ?? "";
       if (sort === "software") return `${peer.software} ${peer.software_version}`;
-      if (sort === "upload") return peer.upload_speed_bps;
-      if (sort === "download") return peer.download_speed_bps ?? 0;
+      if (sort === "upload") return peer.upload_speed_bytes_per_second;
+      if (sort === "download") return peer.download_speed_bytes_per_second;
       return `${peer.upload_state} ${peer.download_state ?? ""}`;
     };
     const leftValue = value(left);
@@ -222,14 +222,20 @@ export function PeersView() {
         <div className="panel-title">
           <h2>Peer activity</h2>
           <div className="peer-filters">
-            {(["active", "all", "uploads", "downloads"] as PeerFilter[]).map((item) => (
+            {(["active", "all", "uploading", "downloading"] as PeerFilter[]).map((item) => (
               <button
                 key={item}
                 className={filter === item ? "active" : "muted"}
                 aria-pressed={filter === item}
                 onClick={() => setFilter(item)}
               >
-                {item === "all" ? "All" : item[0].toUpperCase() + item.slice(1)}
+                {item === "all"
+                  ? "All"
+                  : item === "uploading"
+                    ? "Uploads"
+                    : item === "downloading"
+                      ? "Downloads"
+                      : "Active"}
               </button>
             ))}
           </div>
@@ -286,8 +292,8 @@ export function PeersView() {
               </thead>
               <tbody>
                 {ordered.map((peer) => (
-                  <tr key={peer.client_ecid}>
-                    <td>{peer.client_name || "Anonymous"}</td>
+                  <tr key={peer.ecid}>
+                    <td>{peer.name || "Anonymous"}</td>
                     <td>
                       {peer.ip}
                       {peer.country_code ? ` · ${peer.country_code.toUpperCase()}` : ""}
@@ -295,8 +301,8 @@ export function PeersView() {
                     <td>
                       {peer.software} {peer.software_version}
                     </td>
-                    <td>{formatRate(peer.upload_speed_bps)}</td>
-                    <td>{formatRate(peer.download_speed_bps)}</td>
+                    <td>{formatRate(peer.upload_speed_bytes_per_second)}</td>
+                    <td>{formatRate(peer.download_speed_bytes_per_second)}</td>
                     <td>
                       {peer.upload_state}
                       {peer.download_state ? ` / ${peer.download_state}` : ""}

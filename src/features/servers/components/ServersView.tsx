@@ -70,13 +70,13 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
       changes,
     }: {
       id: number;
-      changes: { priority?: "low" | "normal" | "high"; static?: boolean };
+      changes: { priority?: "low" | "normal" | "high"; permanent?: boolean };
     }) => api.patchServer(id, changes),
     onSuccess: (_, variables) => {
       toast.success(
         variables.changes.priority
           ? `Server priority set to ${variables.changes.priority}.`
-          : `Server marked ${variables.changes.static ? "static" : "temporary"}.`,
+          : `Server marked ${variables.changes.permanent ? "static" : "temporary"}.`,
       );
       refresh();
     },
@@ -274,16 +274,16 @@ export function ServersView({ connectedServerName }: { connectedServerName?: str
                           </button>
                         )}
                         <button
-                          className={server.static ? "icon active-action" : "icon"}
+                          className={server.permanent ? "icon active-action" : "icon"}
                           aria-label={
-                            server.static ? "Mark server temporary" : "Mark server static"
+                            server.permanent ? "Mark server temporary" : "Mark server static"
                           }
-                          title={server.static ? "Mark temporary" : "Mark static"}
+                          title={server.permanent ? "Mark temporary" : "Mark static"}
                           disabled={patch.isPending}
                           onClick={() =>
                             patch.mutate({
                               id: server.ecid,
-                              changes: { static: !server.static },
+                              changes: { permanent: !server.permanent },
                             })
                           }
                         >

@@ -143,7 +143,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 function downloadProgress(download: Download) {
   const progress =
     download.progress?.percent ??
-    (download.size ? ((download.size_done ?? 0) / download.size) * 100 : undefined);
+    (download.size_bytes ? (download.completed_bytes / download.size_bytes) * 100 : undefined);
   return progress === undefined ? undefined : Math.min(100, Math.max(0, progress));
 }
 function Transfers({ downloads }: { downloads: Download[] }) {
@@ -170,7 +170,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
   });
   const bulk = useMutation({
     mutationFn: (patch: {
-      status?: "paused" | "resumed";
+      action?: "pause" | "resume" | "stop";
       priority?: "low" | "normal" | "high" | "auto";
     }) => api.bulkDownloads(selected, patch),
     onSuccess: (_, patch) => {
@@ -179,7 +179,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       toast.success(
         patch.priority
           ? `Selected transfers set to ${patch.priority} priority.`
-          : `Selected transfers ${patch.status === "paused" ? "paused" : "resumed"}.`,
+          : `Selected transfers ${patch.action === "pause" ? "paused" : "resumed"}.`,
       );
     },
     onError: (error) => toast.error(getErrorMessage(error)),
@@ -207,7 +207,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
     onSuccess: (v) => {
       refresh();
       toast.success(
-        `Cleared ${v.cleared} completed notification${v.cleared === 1 ? "" : "s"}. Files remain in Incoming.`,
+        `Cleared ${v.results.filter((entry) => entry.ok).length} completed notification${v.results.filter((entry) => entry.ok).length === 1 ? "" : "s"}. Files remain in Incoming.`,
       );
     },
     onError: (error) => toast.error(getErrorMessage(error)),
@@ -245,14 +245,14 @@ function Transfers({ downloads }: { downloads: Download[] }) {
   const rows = downloads.filter((d) => d.name.toLowerCase().includes(filter.toLowerCase()));
   const orderedRows = [...rows].sort((left, right) => {
     let comparison = 0;
-    if (sort === "speed") comparison = (left.speed_bps ?? 0) - (right.speed_bps ?? 0);
-    else if (sort === "size") comparison = (left.size ?? 0) - (right.size ?? 0);
+    if (sort === "speed") comparison = left.speed_bytes_per_second - right.speed_bytes_per_second;
+    else if (sort === "size") comparison = left.size_bytes - right.size_bytes;
     if (sort === "priority") {
       const rank = (item: Download) =>
         item.priority_auto ? 4 : { low: 1, normal: 2, high: 3 }[item.priority ?? "normal"];
       comparison = rank(left) - rank(right);
     }
-    if (sort === "category") comparison = (left.category ?? 0) - (right.category ?? 0);
+    if (sort === "category") comparison = left.category_index - right.category_index;
     if (sort === "name" || sort === "status")
       comparison = String(left[sort]).localeCompare(String(right[sort]));
     return direction === "asc" ? comparison : -comparison;
@@ -338,10 +338,10 @@ function Transfers({ downloads }: { downloads: Download[] }) {
       </form>
       <div className="bulk-tools">
         <span>{selected.length} selected</span>
-        <button disabled={!selected.length} onClick={() => bulk.mutate({ status: "paused" })}>
+        <button disabled={!selected.length} onClick={() => bulk.mutate({ action: "pause" })}>
           Pause
         </button>
-        <button disabled={!selected.length} onClick={() => bulk.mutate({ status: "resumed" })}>
+        <button disabled={!selected.length} onClick={() => bulk.mutate({ action: "resume" })}>
           Resume
         </button>
         <label className="bulk-priority">
@@ -479,7 +479,7 @@ function Transfers({ downloads }: { downloads: Download[] }) {
                   <td>
                     <select
                       className="category-select"
-                      value={d.category ?? 0}
+                      value={d.category_index}
                       onChange={(e) =>
                         category.mutate({
                           hash: d.hash,
@@ -501,11 +501,11 @@ function Transfers({ downloads }: { downloads: Download[] }) {
                       style={{ "--progress": (progress ?? 0) / 100 } as CSSProperties}
                     />
                     <span className="transfer-progress-cell__text">
-                      {formatMebibytes(d.size_done)} / {formatMebibytes(d.size)} (
+                      {formatMebibytes(d.completed_bytes)} / {formatMebibytes(d.size_bytes)} (
                       {progress === undefined ? "—" : `${progress.toFixed(1)}%`})
                     </span>
                   </td>
-                  <td>{formatRate(d.speed_bps)}</td>
+                  <td>{formatRate(d.speed_bytes_per_second)}</td>
                   <td className="actions-column actions-column--fixed">
                     <div className="transfer-actions__inline">{transferActions(d)}</div>
                     <MobileTransferActions label={`Actions for ${d.name}`}>
@@ -534,19 +534,19 @@ function Uploads() {
   const [filter, setFilter] = useState("");
   const peers = (uploads.data?.clients ?? [])
     .filter((peer) =>
-      `${peer.client_name} ${peer.ip} ${peer.upload_file_name} ${peer.software} ${peer.software_version}`
+      `${peer.name} ${peer.ip} ${peer.upload_file_name} ${peer.software} ${peer.software_version}`
         .toLowerCase()
         .includes(filter.toLowerCase()),
     )
     .sort((left, right) => {
       const value = (peer: UploadPeer) =>
         sort === "peer"
-          ? peer.client_name || peer.ip
+          ? peer.name || peer.ip
           : sort === "file"
             ? peer.upload_file_name
             : sort === "client"
               ? `${peer.software} ${peer.software_version}`
-              : peer.upload_speed_bps;
+              : peer.upload_speed_bytes_per_second;
       const leftValue = value(left);
       const rightValue = value(right);
       const comparison =
@@ -616,15 +616,15 @@ function Uploads() {
             </thead>
             <tbody>
               {peers.map((peer) => (
-                <tr key={peer.client_ecid}>
-                  <td>{peer.client_name || peer.ip}</td>
+                <tr key={peer.ecid}>
+                  <td>{peer.name || peer.ip}</td>
                   <td title={peer.upload_file_name || "Resolving file…"}>
                     {peer.upload_file_name || "Resolving file…"}
                   </td>
                   <td>
                     {peer.software} {peer.software_version}
                   </td>
-                  <td>{formatRate(peer.upload_speed_bps)}</td>
+                  <td>{formatRate(peer.upload_speed_bytes_per_second)}</td>
                 </tr>
               ))}
             </tbody>
@@ -653,10 +653,10 @@ export function DashboardPage() {
         {s.ec_connected ? "daemon connected" : "daemon unavailable"}
       </p>
       <div className="metrics">
-        <Metric label="Download" value={formatRate(s.speeds.download_bps)} />
-        <Metric label="Upload" value={formatRate(s.speeds.upload_bps)} />
-        <Metric label="Sources" value={String(s.queue.total_source_count)} />
-        <Metric label="Upload queue" value={String(s.queue.upload_queue_length)} />
+        <Metric label="Download" value={formatRate(s.speeds.download_speed_bytes_per_second)} />
+        <Metric label="Upload" value={formatRate(s.speeds.upload_speed_bytes_per_second)} />
+        <Metric label="Sources" value={String(s.queue.download_source_count)} />
+        <Metric label="Upload queue" value={String(s.queue.waiting_upload_client_count)} />
       </div>
       <Transfers downloads={downloads.data?.downloads ?? []} />
       <Uploads />
@@ -668,7 +668,9 @@ export function ServersPage() {
   const status = useOutletContext<Status>();
   return (
     <ServersView
-      connectedServerName={status.ed2k.state === "connected" ? status.ed2k.server_name : undefined}
+      connectedServerName={
+        status.ed2k.state === "connected" ? (status.ed2k.server_name ?? undefined) : undefined
+      }
     />
   );
 }
@@ -695,7 +697,7 @@ export function DashboardShell() {
     );
   if (!status.data) return null;
   const s = status.data;
-  const idState = s.ed2k.state !== "connected" ? "unknown" : s.ed2k.low_id ? "low" : "high";
+  const idState = s.ed2k.state !== "connected" ? "unknown" : s.ed2k.high_id ? "high" : "low";
   const navigation = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
     { to: "/search", label: "Search", icon: Search },
@@ -718,7 +720,7 @@ export function DashboardShell() {
           </Link>
         </div>
         <div className="statusline">
-          <span className="connected-header" title={s.ed2k.server_name}>
+          <span className="connected-header" title={s.ed2k.server_name ?? undefined}>
             eD2k: {s.ed2k.state === "connected" ? s.ed2k.server_name || "Connected" : s.ed2k.state}
           </span>
           <span>Kad: {s.kad.state}</span>

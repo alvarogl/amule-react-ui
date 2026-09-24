@@ -12,7 +12,7 @@ export function SearchResultNotesDialog({
   requesting: boolean;
 }) {
   const comments = result.comments ?? [];
-  const searchRunning = result.kad_comment_search_running || requesting;
+  const searchRunning = result.kad_comment_lookup_running || requesting;
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>

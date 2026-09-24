@@ -118,25 +118,19 @@ export function subscribeToLiveUpdates({
         queryKeys.uploadClients,
         (current) => {
           if (!current) return current;
-          const existing = current.clients.findIndex(
-            (item) => item.client_ecid === client.client_ecid,
-          );
+          const existing = current.clients.findIndex((item) => item.ecid === client.ecid);
           if (client.upload_state !== "uploading") {
             return existing === -1
               ? current
               : {
                   ...current,
-                  clients: current.clients.filter(
-                    (item) => item.client_ecid !== client.client_ecid,
-                  ),
+                  clients: current.clients.filter((item) => item.ecid !== client.ecid),
                 };
           }
           const clients =
             existing === -1
               ? [client, ...current.clients]
-              : current.clients.map((item) =>
-                  item.client_ecid === client.client_ecid ? client : item,
-                );
+              : current.clients.map((item) => (item.ecid === client.ecid ? client : item));
           return { ...current, clients };
         },
       );
@@ -146,17 +140,17 @@ export function subscribeToLiveUpdates({
   };
   const removeUploadClient = (event: Event) => {
     try {
-      const { client_ecid } = JSON.parse((event as MessageEvent<string>).data) as {
-        client_ecid?: unknown;
+      const { ecid } = JSON.parse((event as MessageEvent<string>).data) as {
+        ecid?: unknown;
       };
-      if (typeof client_ecid !== "number") throw new Error("client removal is missing its ECID");
+      if (typeof ecid !== "number") throw new Error("client removal is missing its ECID");
       queryClient.setQueryData<Awaited<ReturnType<typeof api.uploadClients>>>(
         queryKeys.uploadClients,
         (current) =>
           current
             ? {
                 ...current,
-                clients: current.clients.filter((client) => client.client_ecid !== client_ecid),
+                clients: current.clients.filter((client) => client.ecid !== ecid),
               }
             : current,
       );
@@ -180,12 +174,12 @@ export function subscribeToLiveUpdates({
         updateUploadClient(event);
         void queryClient.invalidateQueries({ queryKey: queryKeys.clients("active") });
         void queryClient.invalidateQueries({ queryKey: queryKeys.clients("all") });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.clients("downloads") });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.clients("downloading") });
       } else if (type === "client_removed") {
         removeUploadClient(event);
         void queryClient.invalidateQueries({ queryKey: queryKeys.clients("active") });
         void queryClient.invalidateQueries({ queryKey: queryKeys.clients("all") });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.clients("downloads") });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.clients("downloading") });
       } else {
         refresh();
       }

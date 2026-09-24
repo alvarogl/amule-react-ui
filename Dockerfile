@@ -63,6 +63,6 @@ RUN chmod 0755 /usr/local/bin/amule-container-entrypoint \
 EXPOSE 4713/tcp 4662/tcp 4672/udp
 VOLUME ["/config", "/incoming", "/temp"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl --fail --silent http://127.0.0.1:4713/api/v0/version >/dev/null || exit 1
+  CMD curl --fail --silent http://127.0.0.1:4713/api/v1/health >/dev/null || exit 1
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/amule-container-entrypoint"]
 CMD ["amuled", "--log-stdout", "--config-dir=/config"]

@@ -4,16 +4,37 @@ import { setupServer } from "msw/node";
 import { api } from "./amule-api";
 
 const server = setupServer(
-  http.get("*/api/v0/status", () =>
+  http.get("*/api/v1/status", () =>
     HttpResponse.json({
       ec_connected: true,
-      ed2k: { state: "connected", low_id: false },
-      kad: { state: "connected", firewalled: false },
-      speeds: { download_bps: 10, upload_bps: 20 },
-      queue: { upload_queue_length: 1, total_source_count: 2 },
+      ed2k: {
+        state: "connected",
+        high_id: true,
+        user_id: 1,
+        public_ip: "203.0.113.1",
+        connected_since_at: 1,
+        server_name: "server",
+        server_ip: "203.0.113.2",
+        server_port: 4661,
+        network: { user_count: 1, file_count: 2 },
+      },
+      kad: {
+        state: "connected",
+        firewalled_tcp: false,
+        connected_since_at: 1,
+        network: { user_count: 1, file_count: 2, node_count: 3 },
+      },
+      speeds: {
+        download_speed_bytes_per_second: 10,
+        upload_speed_bytes_per_second: 20,
+        download_overhead_bytes_per_second: 0,
+        upload_overhead_bytes_per_second: 0,
+      },
+      disk: { temp_free_bytes: 1, incoming_free_bytes: 1 },
+      queue: { waiting_upload_client_count: 1, download_source_count: 2 },
     }),
   ),
-  http.get("*/api/v0/downloads", () => HttpResponse.json({ downloads: [] })),
+  http.get("*/api/v1/downloads", () => HttpResponse.json({ downloads: [] })),
 );
 
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
@@ -24,20 +45,20 @@ describe("aMule REST client integration", () => {
   it("uses the same-origin API base through the HTTP boundary", async () => {
     await expect(api.status()).resolves.toMatchObject({
       ec_connected: true,
-      speeds: { download_bps: 10, upload_bps: 20 },
+      speeds: { download_speed_bytes_per_second: 10, upload_speed_bytes_per_second: 20 },
     });
     await expect(api.downloads()).resolves.toEqual({ downloads: [] });
   });
 
   it("surfaces throttled update checks and rejected destructive operations", async () => {
     server.use(
-      http.post("*/api/v0/version/check", () =>
+      http.post("*/api/v1/version/check", () =>
         HttpResponse.json(
           { error: { code: "update_check_throttled", message: "Try again later" } },
           { status: 429 },
         ),
       ),
-      http.delete("*/api/v0/downloads/completed", () =>
+      http.delete("*/api/v1/downloads/completed", () =>
         HttpResponse.json(
           {
             error: {

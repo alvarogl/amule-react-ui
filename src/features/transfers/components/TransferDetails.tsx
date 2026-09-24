@@ -66,7 +66,7 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
           ) : (
             <>
               <p className="subtle">
-                {data.status} · {data.size ? formatMebibytes(data.size) : "Size unavailable"}
+                {data.status} · {formatMebibytes(data.size_bytes)}
               </p>
               <h3>Availability</h3>
               <dl className="detail-stats">
@@ -81,17 +81,17 @@ export function TransferDetails({ hash, name }: { hash: string; name: string }) 
                 <div>
                   <dt>Available parts</dt>
                   <dd>
-                    {data.part_count === undefined
+                    {data.total_part_count === undefined
                       ? "Unavailable"
-                      : `${data.available_part_count ?? 0} / ${data.part_count}`}
+                      : `${data.available_part_count ?? 0} / ${data.total_part_count}`}
                   </dd>
                 </div>
                 <div>
                   <dt>ETA</dt>
                   <dd>
-                    {data.remaining_time === undefined || data.remaining_time < 0
+                    {data.remaining_seconds == null || data.remaining_seconds < 0
                       ? "Unavailable"
-                      : formatDuration(data.remaining_time)}
+                      : formatDuration(data.remaining_seconds)}
                   </dd>
                 </div>
               </dl>

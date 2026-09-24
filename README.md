@@ -18,7 +18,7 @@ There is no custom backend or separate production Node server. The running stack
 browser → amuleapi (static files, REST, SSE) ← amuled (aMule core)
 ```
 
-`amuled` starts the native `amuleapi` process. `amuleapi` serves this project's built `dist/` directory at `/`, while its own handlers serve `/api/v0/*` and `/api/v0/events`. This same-origin arrangement keeps the HttpOnly session cookie, REST requests, and live SSE updates together.
+`amuled` starts the native `amuleapi` process. `amuleapi` serves this project's built `dist/` directory at `/`, while its own handlers serve `/api/v1/*` and `/api/v1/events`. This same-origin arrangement keeps the HttpOnly session cookie, REST requests, and live SSE updates together.
 
 The legacy `amuleweb` service is independent of this SPA and is not required.
 Enable it only when an operator intentionally wants a temporary fallback.
@@ -72,8 +72,8 @@ Copy `.env.example` to `.env` to override local values. `.env` is intentionally 
 
 | Variable              | Default                 | Purpose                                                                 |
 | --------------------- | ----------------------- | ----------------------------------------------------------------------- |
-| `VITE_API_BASE`       | `/api/v0`               | Browser REST API base path. Keep relative when aMule serves the bundle. |
-| `VITE_EVENTS_URL`     | `/api/v0/events`        | Browser SSE endpoint.                                                   |
+| `VITE_API_BASE`       | `/api/v1`               | Browser REST API base path. Keep relative when aMule serves the bundle. |
+| `VITE_EVENTS_URL`     | `/api/v1/events`        | Browser SSE endpoint.                                                   |
 | `VITE_DEV_API_ORIGIN` | `http://127.0.0.1:4713` | Vite development proxy target.                                          |
 
 For the deployed SPA, keep browser paths relative and configure `amuleapi` to serve the generated `dist/` directory as its static root. This keeps the UI, cookie, REST API, and SSE stream on one origin.

@@ -14,11 +14,11 @@ import { formatMebibytes, formatRate } from "@/shared/lib/formatters";
 
 function SharedFileMetadataForm({ file }: { file: SharedFile }) {
   const [name, setName] = useState(file.name);
-  const [comment, setComment] = useState(file.comment ?? "");
-  const [rating, setRating] = useState(String(file.rating ?? 0));
+  const [comment, setComment] = useState(file.my_comment ?? "");
+  const [rating, setRating] = useState(String(file.my_rating ?? 0));
   const client = useQueryClient();
   const save = useMutation({
-    mutationFn: (patch: { name?: string; comment?: string; rating?: number }) =>
+    mutationFn: (patch: { name?: string; my_comment?: string; my_rating?: number }) =>
       api.patchSharedFile(file.hash, patch),
     onSuccess: () => {
       toast.success("Shared-file metadata saved.");
@@ -35,7 +35,7 @@ function SharedFileMetadataForm({ file }: { file: SharedFile }) {
   function saveReview(event: FormEvent) {
     event.preventDefault();
     if (comment.length > 50) return toast.warning("A comment can be at most 50 characters.");
-    save.mutate({ comment, rating: Number(rating) });
+    save.mutate({ my_comment: comment, my_rating: Number(rating) });
   }
   return (
     <>
@@ -104,32 +104,28 @@ function SharedFileDetails({ file }: { file: SharedFile }) {
             <>
               <dl className="shared-detail-grid">
                 <dt>Path</dt>
-                <dd title={data.path}>{data.path ?? "Unavailable"}</dd>
+                <dd title={data.directory}>{data.directory ?? "Unavailable"}</dd>
                 <dt>Type</dt>
                 <dd>{data.file_type ?? "Unknown"}</dd>
                 <dt>Share ratio</dt>
                 <dd>{data.share_ratio?.toFixed(2) ?? "—"}</dd>
                 <dt>Complete sources</dt>
-                <dd>
-                  {data.complete_sources_range
-                    ? `${data.complete_sources_range.low}–${data.complete_sources_range.high}`
-                    : data.complete_sources}
-                </dd>
+                <dd>{data.sources.complete}</dd>
                 <dt>Upload queue</dt>
-                <dd>{data.queued_count ?? 0}</dd>
+                <dd>{data.upload_queue_count ?? 0}</dd>
                 <dt>Uploaded</dt>
-                <dd>{formatMebibytes(data.xfer.total)}</dd>
+                <dd>{formatMebibytes(data.uploaded_bytes_total)}</dd>
                 <dt>Requests accepted</dt>
                 <dd>
-                  {data.accepts.total} / {data.requests.total}
+                  {data.accepted_request_count_total} / {data.request_count_total}
                 </dd>
                 <dt>Your rating</dt>
-                <dd>{data.rating ? `${data.rating}/5` : "Unrated"}</dd>
+                <dd>{data.my_rating ? `${data.my_rating}/5` : "Unrated"}</dd>
                 <dt>Your comment</dt>
-                <dd>{data.comment || "No comment"}</dd>
+                <dd>{data.my_comment || "No comment"}</dd>
               </dl>
               <SharedFileMetadataForm
-                key={`${data.hash}-${data.name}-${data.comment ?? ""}-${data.rating ?? 0}`}
+                key={`${data.hash}-${data.name}-${data.my_comment ?? ""}-${data.my_rating ?? 0}`}
                 file={data}
               />
             </>
@@ -158,12 +154,12 @@ function ShareRootRecursionEditor({
         directories.map((item) => (item.path === directory.path ? { ...item, recursive } : item)),
       ),
     onSuccess: (result) => {
-      const rejected = result.rejected ?? [];
+      const rejected = result.results.filter((entry) => !entry.ok);
       void client.invalidateQueries({ queryKey: queryKeys.sharedDirectories });
       void client.invalidateQueries({ queryKey: queryKeys.sharedFiles });
       if (rejected.length) {
         toast.error(
-          `Some share roots were rejected: ${rejected.map((entry) => entry.reason).join(", ")}.`,
+          `Some share roots were rejected: ${rejected.map((entry) => entry.error?.message ?? entry.id).join(", ")}.`,
         );
         return;
       }
@@ -251,10 +247,10 @@ export function SharedFilesView() {
   const addDirectory = useMutation({
     mutationFn: () => api.addSharedDirectory(directoryPath.trim(), recursive),
     onSuccess: (result) => {
-      const rejected = result.rejected ?? [];
+      const rejected = result.results.filter((entry) => !entry.ok);
       if (rejected.length) {
         toast.error(
-          `Share root was rejected: ${rejected.map((entry) => entry.reason).join(", ")}.`,
+          `Share root was rejected: ${rejected.map((entry) => entry.error?.message ?? entry.id).join(", ")}.`,
         );
         return;
       }
@@ -268,10 +264,10 @@ export function SharedFilesView() {
   const removeDirectory = useMutation({
     mutationFn: api.removeSharedDirectory,
     onSuccess: (result) => {
-      const rejected = result.rejected ?? [];
+      const rejected = result.results.filter((entry) => !entry.ok);
       if (rejected.length) {
         toast.error(
-          `Share root was rejected: ${rejected.map((entry) => entry.reason).join(", ")}.`,
+          `Share root was rejected: ${rejected.map((entry) => entry.error?.message ?? entry.id).join(", ")}.`,
         );
         return;
       }
@@ -289,11 +285,11 @@ export function SharedFilesView() {
   const rows = [...(shared.data?.shared ?? [])].sort((left, right) => {
     const value = (file: SharedFile) =>
       sort === "sources"
-        ? file.complete_sources
+        ? file.sources.complete
         : sort === "speed"
-          ? file.upload_speed_bps
+          ? file.upload_speed_bytes_per_second
           : sort === "size"
-            ? file.size
+            ? file.size_bytes
             : file.name;
     const leftValue = value(left);
     const rightValue = value(right);
@@ -458,9 +454,9 @@ export function SharedFilesView() {
                         <option value="auto">Automatic</option>
                       </select>
                     </td>
-                    <td>{formatMebibytes(file.size)}</td>
-                    <td>{file.complete_sources}</td>
-                    <td>{formatRate(file.upload_speed_bps)}</td>
+                    <td>{formatMebibytes(file.size_bytes)}</td>
+                    <td>{file.sources.complete}</td>
+                    <td>{formatRate(file.upload_speed_bytes_per_second)}</td>
                     <td className="actions-column actions-column--fixed">
                       <SharedFileDetails file={file} />
                       <ConfirmDialog
