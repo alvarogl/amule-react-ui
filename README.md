@@ -28,9 +28,83 @@ Enable it only when an operator intentionally wants a temporary fallback.
 This repository also contains a source-built, multi-platform container image
 and a single-service Compose deployment. It runs `amuled` with its native
 `amuleapi` child and serves the bundled SPA without a Node.js runtime. See
-[docs/CONTAINER.md](docs/CONTAINER.md) for first-run Docker secret setup,
-volumes, firewall/HighID requirements, upgrades, password rotation, and
-reverse-proxy/TLS guidance.
+[docs/CONTAINER.md](docs/CONTAINER.md) for migration, backup, password
+rotation, and reverse-proxy/TLS guidance.
+
+### Recommended Docker Compose configuration
+
+Use the supplied Compose file unchanged for a new installation. It keeps
+configuration, completed downloads, and temporary downloads in three separate
+named volumes; it exposes only the UI/API and aMule's TCP/UDP P2P ports. The
+EC and legacy `amuleweb` ports stay private to the container.
+
+Create a local Compose environment file and the first-boot admin-password
+secret:
+
+```bash
+cp docker.env.example docker.env
+mkdir -p secrets
+chmod 700 secrets
+umask 077
+printf '%s' 'choose-a-long-unique-password' > secrets/amule-admin-password
+```
+
+Set the values below in `docker.env`. The template is deliberately safe to
+copy: it is ignored by Git, contains no password, and uses local source-build
+defaults.
+
+```dotenv
+# Ownership used for /config, /incoming, and /temp inside the container.
+# Use: id -u ; id -g
+PUID=1000
+PGID=1000
+
+# Host ports. Change only if these host ports are unavailable or restricted.
+AMULE_UI_PORT=4713
+AMULE_TCP_PORT=4662
+AMULE_UDP_PORT=4672
+
+# Build locally from this checkout. For a published deployment, pin both
+# values to an immutable image and exact combined version tag.
+AMULE_IMAGE=amule-console
+AMULE_IMAGE_VERSION=local
+
+# A file path used as a Docker secret source; never put the password here.
+AMULE_ADMIN_PASSWORD_FILE=./secrets/amule-admin-password
+```
+
+For a published image, replace the two image settings with values such as:
+
+```dotenv
+AMULE_IMAGE=alvarogl91/amule-console
+AMULE_IMAGE_VERSION=0.2.0-amule-3.0.1
+```
+
+Always use an exact image tag for upgrades and rollback; do not deploy
+`latest`. Start a source build or an already-published image respectively:
+
+```bash
+# From this checkout: build the image, validate the resolved configuration,
+# and start it.
+docker compose --env-file docker.env config
+docker compose --env-file docker.env up -d --build
+
+# With an exact published image configured in docker.env:
+docker compose --env-file docker.env pull
+docker compose --env-file docker.env up -d
+```
+
+Check startup with `docker compose --env-file docker.env ps`, then open
+`http://<docker-host>:<AMULE_UI_PORT>` and sign in with the password stored in
+the secret file. The secret is consumed only to initialize the credential
+record; changing that file later does not change the admin password.
+
+The UI/API port grants administrative access. Limit TCP `4713` to trusted
+operator networks using the host or network firewall. For HighID, allow and
+port-forward both configured P2P ports (TCP `4662` and UDP `4672` by default).
+Use a TLS reverse proxy for access beyond a trusted LAN, and proxy `/`,
+`/api/v1/*`, and `/api/v1/events` together so login and live updates remain
+same-origin.
 
 ## Run the stack
 
