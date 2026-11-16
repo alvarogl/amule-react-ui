@@ -87,6 +87,12 @@ const readOnlyKeys = new Set([
   "last_update_result",
 ]);
 const hiddenKeys = new Set(["password", "guest_password", "proxy_password"]);
+const readOnlyPaths = new Set([
+  "directories.follow_symlinks",
+  "directories.allowed_remote_roots",
+  "files.ffprobe_path",
+  "online_signature.directory",
+]);
 const restartKeys = new Set([
   "connection.bind_address",
   "connection.bind_interface",
@@ -174,7 +180,7 @@ function PreferenceField({
   onChange: (value: unknown) => void;
 }) {
   if (hiddenKeys.has(fieldKey)) return null;
-  const readOnly = readOnlyKeys.has(fieldKey);
+  const readOnly = readOnlyKeys.has(fieldKey) || readOnlyPaths.has(path);
   const id = `preference-${path}`;
   if (typeof value === "boolean")
     return (
