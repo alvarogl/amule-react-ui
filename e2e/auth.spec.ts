@@ -258,6 +258,7 @@ test("covers core session and mutation workflows", async ({ page }) => {
   await page.getByPlaceholder("Find files").fill("example");
   await page.locator(".search-form").getByRole("button", { name: "Search" }).click();
   await expect(page.getByRole("button", { name: /example finished/ })).toBeVisible();
+  await expect(page.getByText("No results found.")).toBeVisible();
   await page.getByRole("button", { name: "Close example" }).click();
   await expect.poll(() => closedSearch).toBe("/api/v1/search/7");
   await expect(page.getByRole("button", { name: "Close example" })).not.toBeVisible();

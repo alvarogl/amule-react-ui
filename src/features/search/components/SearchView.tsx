@@ -252,7 +252,9 @@ export function SearchView() {
             </span>
           </div>
           {results.data.results.length === 0 ? (
-            <p className="empty">Waiting for results…</p>
+            <p className="empty">
+              {isActiveSearchFinished ? "No results found." : "Waiting for results…"}
+            </p>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
